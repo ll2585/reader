@@ -50,6 +50,8 @@ class TextFrame(QtGui.QMainWindow):
 		self.inSetData = False
 		self.setChildrenFocusPolicy(QtCore.Qt.NoFocus)
 
+		self.shiftPressed = False
+
 	def lookupNaver(self):
 		from app.koreanHelper import get_root, get_root_korean
 		from app.terms import  RootWord, Term
@@ -193,6 +195,8 @@ class TextFrame(QtGui.QMainWindow):
 
 
 	def keyPressEvent(self, e):
+		if e.isAutoRepeat() and e.key() == QtCore.Qt.Key_Shift:
+			return
 		text = gui.application.getText()
 		marked = text.isRangeMarked()
 		numPadDict = {QtCore.Qt.Key_5: TermStatus.Known,
@@ -204,17 +208,19 @@ class TextFrame(QtGui.QMainWindow):
 		              QtCore.Qt.Key_0: TermStatus.Ignored,
 		              QtCore.Qt.Key_6: TermStatus.WellKnown,
 		              QtCore.Qt.Key_W: TermStatus.WellKnown}
-		if (e.key() == QtCore.Qt.Key_Right):
+		if (e.key() == QtCore.Qt.Key_Shift):
+			self.shiftPressed = True
+		elif (e.key() == QtCore.Qt.Key_Right):
 			indexStart = min(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
 			indexEnd = max(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
-			if marked and indexStart == indexEnd and indexEnd < len(text.getTextItems())-1:
-				indexStart += 1
+			if marked and indexEnd < len(text.getTextItems())-1:
 				indexEnd += 1
-				while text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
-					indexStart += 1
+				while text.getTextItemValueFromStartToEnd(indexEnd, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
 					indexEnd += 1
+				if not self.shiftPressed:
+					indexStart = indexEnd
 			elif not marked:
 				indexStart = 0
 				indexEnd = 0
@@ -230,12 +236,12 @@ class TextFrame(QtGui.QMainWindow):
 				text.getMarkIndexEnd())
 			indexEnd = max(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
-			if marked and indexStart == indexEnd and indexEnd and indexEnd < len(text.getTextItems()):
+			if marked and indexStart > 0:
 				indexStart -= 1
-				indexEnd -= 1
-				while text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
+				while text.getTextItemValueFromStartToEnd(indexStart, indexStart).strip() in [constants.PARAGRAPH_MARKER, '']:
 					indexStart -= 1
-					indexEnd -= 1
+				if not self.shiftPressed:
+					indexEnd = indexStart
 			elif not marked:
 				indexStart = len(text.getTextItems())
 				indexEnd = len(text.getTextItems())
@@ -251,7 +257,7 @@ class TextFrame(QtGui.QMainWindow):
 				self.getTextPanel().startTermFrame()
 		elif(e.key() in numPadDict):
 			if marked:
-				term = text.getMarkedTerm().getLink()
+				term = text.getMarkedTermLink()
 				if term:
 					term.setStatus(numPadDict[e.key()])
 					term.updated = True
@@ -259,12 +265,17 @@ class TextFrame(QtGui.QMainWindow):
 					self.getTextPanel().update()
 					gui.application.getTerms().setDirty(True)
 
+	def keyReleaseEvent(self, e):
+		if e.key() == QtCore.Qt.Key_Shift:
+			print("released shift")
+			self.shiftPressed = False
+
 	def updateLabel(self, marked, startIndex, endIndex):
 		text = gui.application.getText()
 		textItems = text.getTextItems()
 
 		if marked:
-			term = text.getMarkedTerm().getLink()
+			term = text.getMarkedTermLink()
 			if term:
 				self.getLabinfo().setText(
 							"<html><div style=\"text-align:%s;width:%s;\">%s</div></html>"
@@ -297,6 +308,7 @@ class TextPanel(QtGui.QWidget):
 		self.scrollArea.setMaximumSize(size)
 		self.setMouseTracking(True)
 		self.dragging = False
+		self.mousePressed = False
 
 		p = self.scrollArea.palette()
 		p.setColor(self.scrollArea.backgroundRole(), QtCore.Qt.white)
@@ -439,6 +451,14 @@ class TextPanel(QtGui.QWidget):
 		index = text.getPointedTextItemIndex(p1)
 		if index >= 0:
 			textItems = text.getTextItems()
+			if self.mousePressed:
+				startIndex = text.getMarkIndexStart()
+				endIndex = index
+				if startIndex < endIndex:
+					text.setMarkIndexEnd(endIndex)
+				self.dragging = True
+				#endIndex = text.getMarkIndexEnd()
+				print(startIndex)
 			t = textItems[index].getLink()
 			if not t:
 				s = textItems[index].getTextItemValue().strip()
@@ -468,11 +488,16 @@ class TextPanel(QtGui.QWidget):
 			text = gui.application.getText()
 			p1 = e.pos()
 			startIndex = text.getPointedTextItemIndex(p1)
+			endIndex = startIndex
 			text.setRangeMarked(startIndex >= 0)
 			text.setMarkIndexStart(startIndex)
+			text.setMarkIndexEnd(endIndex)
+			self.update()
 			self.dragging = False
+			self.mousePressed = True
 
 	def mouseReleaseEvent(self, e):
+		self.mousePressed = False
 		if self.isPopupTriggerHandled(e):
 			return
 		if (e.button() == QtCore.Qt.LeftButton):
@@ -556,7 +581,7 @@ class TextPanel(QtGui.QWidget):
 							g2d.fillRect(QtCore.QRectF(p, d), c)
 						else:
 							if rtl:
-								g2d.fillRect(QtCore.QRectF(QtCore.QPointF(p.x() + 1, p.y()), QtCore.QSizeF(d.width() - 1, d.height())), c)
+								g2d.fillRect(QtCore.QRectF(QtCore.QPointF(p.x() + 1, p.y()), QtCore.QSizeF(max(d.width() - 1,0), d.height())), c)
 							else:
 								#print('%s and the p is %s and the d is %s' %(item,p, d))
 								g2d.fillRect(QtCore.QRectF(p, QtCore.QSizeF(max(d.width()-1,0), d.height())), c)
@@ -566,12 +591,13 @@ class TextPanel(QtGui.QWidget):
 							g2d.fillRect(QtCore.QRectF(p2, d2), c)
 						#g2d.setBrush(QtCore.Qt.black)
 						if marked and id >= indexStart and id <= indexEnd:
-							rect = QtCore.QRectF(p.x(), p.y(),d.width() - 1, d.height())
-							defaultPen = g2d.pen()
-							pen = QtGui.QPen(QtCore.Qt.black, 1, QtCore.Qt.SolidLine)
-							g2d.setPen(pen)
-							g2d.drawRect(rect)
-							g2d.setPen(defaultPen)
+							rect = QtCore.QRectF(p.x(), p.y(), max(d.width() - 1,0), d.height())
+							if rect.width() > 0:
+								defaultPen = g2d.pen()
+								pen = QtGui.QPen(QtCore.Qt.black, 1, QtCore.Qt.SolidLine)
+								g2d.setPen(pen)
+								g2d.drawRect(rect)
+								g2d.setPen(defaultPen)
 						s = item.getTextItemValue()
 						if s:
 							textLayout = QtGui.QTextLayout("\u200F%s" %(s) if rtl else s, self.font())

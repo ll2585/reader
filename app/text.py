@@ -131,12 +131,20 @@ class Text():
 				return ti.getTextItemPosition()
 		return None
 
-	def getMarkedTerm(self):
+#returns textitem
+	def getMarkedTermLink(self):
 		if self.rangeMarked:
+			indexStart = min(self.markIndexStart, self.markIndexEnd)
 			indexEnd = max(self.markIndexStart, self.markIndexEnd)
-			if indexEnd >= 0:
-				ti = self.textItems[indexEnd]
-				return ti
+			if indexStart >= 0 and indexEnd >= 0:
+				if indexStart == indexEnd:
+					ti = self.textItems[indexStart]
+					return ti.getLink()
+				else:
+					s = ''.join([x.getTextItemValue()+x.getAfterItemValue() for x in self.textItems[indexStart:indexEnd]])
+					s += self.textItems[indexEnd].getTextItemValue()
+					terms = gui.application.getTerms()
+					#return the multiterm idgaf actually lol
 		return None
 
 	def getMarkedText(self, dragging):
