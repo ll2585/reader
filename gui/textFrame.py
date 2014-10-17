@@ -26,7 +26,10 @@ class TextFrame(QtGui.QMainWindow):
 
 		bar2 = QtGui.QHBoxLayout()
 		self.labinfo = QtGui.QLabel('HI<html>&nbsp;\n&nbsp;</html>')
-
+		self.labinfo.setTextFormat(QtCore.Qt.RichText)
+		self.labinfo.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding , QtGui.QSizePolicy.MinimumExpanding )
+		self.labinfo.setWordWrap(True)
+		bar2.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
 		bar2.addWidget(self.labinfo)
 		#self.lang = gui.application.getLanguage()
 
@@ -42,7 +45,8 @@ class TextFrame(QtGui.QMainWindow):
 		self.setCentralWidget(self.mainPanel)
 
 
-		self.setFixedSize(self.width(), self.height())
+		#self.setFixedSize(self.width(), self.height())
+		self.resize(self.sizeHint())
 		self.inSetData = False
 		self.setChildrenFocusPolicy(QtCore.Qt.NoFocus)
 
@@ -93,6 +97,8 @@ class TextFrame(QtGui.QMainWindow):
 							else:
 								rootDef = None
 							if rootWord not in terms.rootDict:
+								reLookupRoot = get_root(rootDef)
+								rootTrans = reLookupRoot[1]
 								newID = len(terms.rootDict)+1
 								#(self, id, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status, new = True, updated = False):
 								#1 for all new roots
@@ -189,7 +195,15 @@ class TextFrame(QtGui.QMainWindow):
 	def keyPressEvent(self, e):
 		text = gui.application.getText()
 		marked = text.isRangeMarked()
-		numPadDict = {QtCore.Qt.Key_5: TermStatus.WellKnown}
+		numPadDict = {QtCore.Qt.Key_5: TermStatus.Known,
+		              QtCore.Qt.Key_4: TermStatus.Learning4,
+		              QtCore.Qt.Key_3: TermStatus.Learning3,
+		              QtCore.Qt.Key_2: TermStatus.Learning2,
+		              QtCore.Qt.Key_1: TermStatus.Unknown,
+		              QtCore.Qt.Key_I: TermStatus.Ignored,
+		              QtCore.Qt.Key_0: TermStatus.Ignored,
+		              QtCore.Qt.Key_6: TermStatus.WellKnown,
+		              QtCore.Qt.Key_W: TermStatus.WellKnown}
 		if (e.key() == QtCore.Qt.Key_Right):
 			indexStart = min(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
@@ -198,15 +212,19 @@ class TextFrame(QtGui.QMainWindow):
 			if marked and indexStart == indexEnd and indexEnd < len(text.getTextItems())-1:
 				indexStart += 1
 				indexEnd += 1
-				print(indexEnd)
+				if text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() == constants.PARAGRAPH_MARKER:
+					indexStart += 1
+					indexEnd += 1
 			elif not marked:
 				indexStart = 0
 				indexEnd = 0
+				marked = True
 				text.setRangeMarked(True)
 			text.setMarkIndexStart(indexStart)
 			text.setMarkIndexEnd(indexEnd)
 			self.getTextPanel().checkScrollPane()
 			self.getTextPanel().update()
+			self.updateLabel(marked, indexStart, indexEnd)
 		elif(e.key() == QtCore.Qt.Key_Left):
 			indexStart = min(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
@@ -215,25 +233,53 @@ class TextFrame(QtGui.QMainWindow):
 			if marked and indexStart == indexEnd and indexEnd and indexEnd < len(text.getTextItems()):
 				indexStart -= 1
 				indexEnd -= 1
+				if text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() == constants.PARAGRAPH_MARKER:
+					indexStart -= 1
+					indexEnd -= 1
 			elif not marked:
 				indexStart = len(text.getTextItems())
 				indexEnd = len(text.getTextItems())
+				marked = True
 				text.setRangeMarked(True)
 			text.setMarkIndexStart(indexStart)
 			text.setMarkIndexEnd(indexEnd)
 			self.getTextPanel().checkScrollPane()
 			self.getTextPanel().update()
+			self.updateLabel(marked, indexStart, indexEnd)
 		elif(e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return):
 			if marked:
 				self.getTextPanel().startTermFrame()
 		elif(e.key() in numPadDict):
 			if marked:
 				term = text.getMarkedTerm().getLink()
-				term.setStatus(numPadDict[e.key()])
-				term.updated = True
-				term.root.updated = True
-				self.getTextPanel().update()
-				gui.application.getTerms().setDirty(True)
+				if term:
+					term.setStatus(numPadDict[e.key()])
+					term.updated = True
+					term.root.updated = True
+					self.getTextPanel().update()
+					gui.application.getTerms().setDirty(True)
+
+	def updateLabel(self, marked, startIndex, endIndex):
+		text = gui.application.getText()
+		textItems = text.getTextItems()
+
+		if marked:
+			term = text.getMarkedTerm().getLink()
+			if term:
+				print(term.displayWithStatusHTML())
+				self.getLabinfo().setText(
+							"<html><div style=\"text-align:%s;width:%s;\">%s</div></html>"
+							%("right" if gui.application.getLanguage().getRightToLeft() else "left",
+									preferences.getCurrWidthTextPanel(), term.displayWithStatusHTML()))
+			else:
+				s = text.getTextItemValueFromStartToEnd(startIndex, endIndex).strip()
+				if s != "" and s != constants.PARAGRAPH_MARKER:
+					self.getLabinfo().setText(
+							"<html><div style=\"text-align:%s;width:%s;\">%s<br>(New Word)</div></html>"
+							%("right" if gui.application.getLanguage().getRightToLeft() else "left",
+									preferences.getCurrWidthTextPanel(), utilities.escapeHTML(s)))
+			self.resize(self.sizeHint())
+
 
 
 class TextPanel(QtGui.QWidget):
@@ -413,7 +459,7 @@ class TextPanel(QtGui.QWidget):
 										preferences.getCurrWidthTextPanel(), t.displayWithStatusHTML()))
 				#utilities.setComponentOrientation(self.frame.getLabinfo())
 				#utilities.setHorizontalAlignment(self.frame.getLabinfo())
-
+			self.frame.resize(self.frame.sizeHint())
 		#need to implement drag oops
 
 

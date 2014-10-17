@@ -313,7 +313,7 @@ class Term():
 		tr = self.root.translation
 		if tr == "":
 			tr = "(No Translation)"
-		return utilities.escapeHTML('%s\n%s' %(self.word, utilities.escapeHTML('%s%s — %s' %(s,tr, self.root.status.getStatusShortText()))))
+		return utilities.escapeHTML('%s<br>root: %s<br>%s' %(self.word, self.root.word, utilities.escapeHTML('%s%s — %s' %(s,tr, self.root.status.getStatusShortText()))))
 
 	def getTerm(self):
 		return self.word

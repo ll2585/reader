@@ -164,7 +164,9 @@ def replaceControlCharactersWithSpace(s):
 	return re.sub('[\\u0000-\\u001F]+',' ', s).strip()
 
 def escapeHTML(s):
-		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+	return s
+	#python already unescapes html
+		#return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
 
 def createNewFile(f):

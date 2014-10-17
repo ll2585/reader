@@ -183,6 +183,23 @@ class Text():
 			i += 1
 		return r
 
+	def getTextItemValueFromStartToEnd(self, start, end):
+		s = ''
+		print('%s fgsdfdsf' %start)
+		if start >= 0 and end >= 0:
+
+			if start == end:
+				ti = self.textItems[start]
+				term = ti.getLink()
+				if not term:
+					s = ti.getTextItemValue()
+				else:
+					s = term.getTerm()
+			else:
+				s = ''.join([x.getTextItemValue()+x.getAfterItemValue() for x in self.textItems[start:end]])
+				s += self.textItems[end].getTextItemValue()
+		return s
+
 class TextItem():
 	def __init__(self, textItemValue, afterItemValue, status = 'bad'):
 		self.textItemValue = textItemValue

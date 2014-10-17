@@ -23,6 +23,7 @@ class TermFrame(QtGui.QMainWindow):
 		#bar1.addWidget(QtGui.QLabel('Term:'))
 		self.tfTerm = MultiLineTextField('', 200, 2, 35, self)
 		#bar1.addWidget(self.tfTerm.getTextAreaScrollPane())
+
 		formLayout.addRow(QtGui.QLabel('Term:'), self.tfTerm.getTextAreaScrollPane())
 		self.tfRootTerm = MultiLineTextField('', 200, 2, 35, self)
 		formLayout.addRow(QtGui.QLabel('Root Term:'), self.tfRootTerm.getTextAreaScrollPane())
@@ -286,6 +287,7 @@ class TermFrame(QtGui.QMainWindow):
 		key = term.lower()
 		changedTerm = self.getOriginalKey() != key
 		changedRoot = self.getTfRootTerm().getTextArea().toPlainText() != self.originalRoot and self.originalRoot != ''
+		print(self.getTfRootTerm().getTextArea().toPlainText())
 		terms = gui.application.getTerms()
 		t = terms.getTermFromKey(key)
 		exists = (t != None)
@@ -297,9 +299,10 @@ class TermFrame(QtGui.QMainWindow):
 		else:
 			rootTerm = terms.rootDict[root]
 			if definition != rootTerm.definition or translation != rootTerm.translation or status != rootTerm.status:
-				if not utilities.showYesNoQuestion(
-					"You have changed the Root Term definition or translation!\n\nAre you sure?", True):
-					return
+				#got rid of this because duh...
+				#if not utilities.showYesNoQuestion(
+				#	"You have changed the Root Term definition or translation or status!\n\nAre you sure?", True):
+				#	return
 				rootTerm.definition = definition
 				rootTerm.translation = translation
 				rootTerm.status = status
@@ -329,6 +332,7 @@ class TermFrame(QtGui.QMainWindow):
 					return
 				t.updated = True
 			t.setTerm(term)
+			t.root =  terms.rootDict[root]
 			t.setTranslation(translation)
 			t.setSentence(sentence)
 			t.setStatus(status)
@@ -337,7 +341,8 @@ class TermFrame(QtGui.QMainWindow):
 		self.setVisible(False)
 		gui.application.getText().matchWithTerms()
 		gui.application.getTextFrame().getTextPanel().update()
-		gui.application.getTextFrame().getTextPanel().setFocus(True)
+		gui.application.getTextFrame().setFocus(True)
+		gui.application.getTextFrame().activateWindow()
 
 
 class MultiLineTextField():
@@ -345,16 +350,22 @@ class MultiLineTextField():
 		self.textArea = customEdit(frame)
 		self.setHeight(lines)
 		self.textArea.setLineWrapColumnOrWidth(width)
+
 		self.textAreaScrollPane = QtGui.QScrollArea()
 
 		self.textAreaScrollPane.setWidgetResizable(False)
+		self.container = QtGui.QWidget()
+		layout = QtGui.QGridLayout(self.container)
+		layout.addWidget(self.textArea)
 
-		self.textAreaScrollPane.setWidget(self.textArea)
+		self.textAreaScrollPane.setWidget(self.container)
+		self.textAreaScrollPane.setWidgetResizable(True)
+		#self.textAreaScrollPane.setWidget(self.textArea)
 		self.textAreaScrollPane.adjustSize()
 		self.textAreaScrollPane.resize(self.textArea.size())
 
 	def getTextAreaScrollPane(self):
-		return self.textAreaScrollPane
+		return self.textArea
 
 	def getTextArea(self):
 		return self.textArea
@@ -372,6 +383,7 @@ class customEdit(QtGui.QTextEdit):
 	def __init__(self, par):
 		QtGui.QTextEdit.__init__(self)
 		self.parent = par
+		self.setAcceptRichText(False)
 
 	def focusOutEvent(self, e):
 		QtGui.QTextEdit.focusOutEvent(self,e)
