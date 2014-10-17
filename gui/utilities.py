@@ -218,7 +218,12 @@ def createEmptyFile(dir):
 
 def readFileIntoString(filepath):
 	f = open(filepath, 'r', encoding=constants.ENCODING)
-	return f.read().strip()
+
+	t = f.read()
+	#u = t.decode("utf-8-sig")
+	#print(u)
+	#print('text is %s' %t)
+	return t.strip()
 
 def openURLInDefaultBrowser(urlString):
 	import webbrowser

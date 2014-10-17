@@ -12,6 +12,7 @@ class Text():
 		if(directory):
 			self.file = directory
 			self.text = utilities.readFileIntoString(directory)
+			print('text is %s' %directory)
 			self.textItems = []
 			self.splitText()
 			self.coordSet = False
@@ -28,7 +29,6 @@ class Text():
 		text = text.replace(constants.UNIX_EOL, " %s " %constants.PARAGRAPH_MARKER)
 		text = text.replace(constants.TAB, " ")
 		text = text.strip()
-
 		if (gui.application.getLanguage().getMakeCharacterWord()):
 			#no idea what this does
 			pass
@@ -185,7 +185,7 @@ class Text():
 
 	def getTextItemValueFromStartToEnd(self, start, end):
 		s = ''
-		print('%s fgsdfdsf' %start)
+		#print('%s fgsdfdsf' %start)
 		if start >= 0 and end >= 0:
 
 			if start == end:

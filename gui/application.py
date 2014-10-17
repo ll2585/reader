@@ -209,7 +209,7 @@ class StartFrame(QtGui.QMainWindow):
 		lang = getLanguage()
 		if lang:
 			dlg = NewTextDialog(utilities.getClipBoardText().strip())
-			dlg.show();
+			dlg.show()
 		else:
 			utilities.showErrorMessage("Not possible.")
 

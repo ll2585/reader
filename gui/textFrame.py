@@ -212,7 +212,7 @@ class TextFrame(QtGui.QMainWindow):
 			if marked and indexStart == indexEnd and indexEnd < len(text.getTextItems())-1:
 				indexStart += 1
 				indexEnd += 1
-				if text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() == constants.PARAGRAPH_MARKER:
+				while text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
 					indexStart += 1
 					indexEnd += 1
 			elif not marked:
@@ -233,7 +233,7 @@ class TextFrame(QtGui.QMainWindow):
 			if marked and indexStart == indexEnd and indexEnd and indexEnd < len(text.getTextItems()):
 				indexStart -= 1
 				indexEnd -= 1
-				if text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() == constants.PARAGRAPH_MARKER:
+				while text.getTextItemValueFromStartToEnd(indexStart, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
 					indexStart -= 1
 					indexEnd -= 1
 			elif not marked:
@@ -266,7 +266,6 @@ class TextFrame(QtGui.QMainWindow):
 		if marked:
 			term = text.getMarkedTerm().getLink()
 			if term:
-				print(term.displayWithStatusHTML())
 				self.getLabinfo().setText(
 							"<html><div style=\"text-align:%s;width:%s;\">%s</div></html>"
 							%("right" if gui.application.getLanguage().getRightToLeft() else "left",
@@ -331,7 +330,6 @@ class TextPanel(QtGui.QWidget):
 		p1 = e.pos()
 		item = text.getPointedTextItem(p1)
 		if item:
-			print(item)
 			menu = QtGui.QMenu(self)
 			linkedWord = item.getLink()
 			if(linkedWord):
@@ -560,7 +558,8 @@ class TextPanel(QtGui.QWidget):
 							if rtl:
 								g2d.fillRect(QtCore.QRectF(QtCore.QPointF(p.x() + 1, p.y()), QtCore.QSizeF(d.width() - 1, d.height())), c)
 							else:
-								g2d.fillRect(QtCore.QRectF(p, QtCore.QSizeF(d.width() - 1, d.height())), c)
+								#print('%s and the p is %s and the d is %s' %(item,p, d))
+								g2d.fillRect(QtCore.QRectF(p, QtCore.QSizeF(max(d.width()-1,0), d.height())), c)
 						if notLastWord:
 							p2 = item.getAfterItemPosition()
 							d2 = item.getAfterItemDimension()
