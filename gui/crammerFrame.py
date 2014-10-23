@@ -7,6 +7,7 @@ import app.TermStatus
 from PyQt4 import QtGui, QtCore
 from gui.termFrame import TermFrame
 import app.text as text
+import functools
 
 class CrammerFrame(QtGui.QMainWindow):
 	def __init__(self, terms):
@@ -17,7 +18,7 @@ class CrammerFrame(QtGui.QMainWindow):
 
 		self.termModel = TermTableModel(self.terms)
 
-		table_view = TableView()
+		table_view = TableView(self)
 		table_view.setModel(self.termModel)
 		table_view.resizeColumnToContents(0)
 		table_view.resizeColumnToContents(1)
@@ -47,40 +48,76 @@ class CrammerFrame(QtGui.QMainWindow):
 		else:
 			print("PICK CARDS IDIOT")
 
+	def closeEvent(self, e):
+		import os
+		terms = gui.application.getTerms()
+		print("CLOSED")
+		termFrame = gui.application.getTermFrame()
+		if termFrame:
+			termFrame.setVisible(False)
+			termFrame.close()
+			gui.application.setTermFrame(None)
+		self.setVisible(False)
+		self.close()
+		gui.application.setTextFrame(None)
+
+		terms = None
+		gui.application.setTerms(terms)
+
+		crammer = gui.application.getCrammerFrame()
+		crammer = None
+		gui.application.setCrammerFrame(crammer)
+
+		gui.application.getStartFrame().setVisible(True)
+
 class TableView(QtGui.QTableView):
 
-	def __init__(self):
+	def __init__(self, parent):
 		super(TableView, self).__init__()
-		self.setItemDelegateForColumn(0, ItemDelegate())
+		self.parent = parent
+		self.setItemDelegateForColumn(0, ItemDelegate(self))
+		self.setItemDelegateForColumn(6, ButtonDelegate(self))
+
+	def cellButtonClicked(self, row):
+		print(self.sender())
+		rows = self.model().rowCount(self)
+		print(self.currentIndex().row())
+		allRows = rows
+		rowsToRemove = -1
+		for r in range(0,allRows):
+			if self.sender() == self.indexWidget((self.model().index(r, 6))):
+				print('wtf row %s' %r)
+				rowsToRemove = r
+				break
+		if rowsToRemove != -1:
+			print('removing row %s' %rowsToRemove)
+			del self.model().mylist[rowsToRemove]
+			self.model().beginRemoveRows(QtCore.QModelIndex(), rowsToRemove, rowsToRemove)
+			self.model().removeRows(rowsToRemove, 1)
+			self.model().endRemoveRows()
+			if(len(self.model().mylist)==0):
+				self.parent.closeMe()
+
+
 
 class TermTableModel(QtCore.QAbstractTableModel):
 	def __init__(self, terms):
 		super(TermTableModel, self).__init__()
-		self.header = ['✓', '#', 'Word', 'Definition', 'Status', 'Source']
-		self.terms = terms
+		self.header = ['✓', '#', 'Word', 'Definition', 'Status', 'Source','[X]']
 		self.mylist = []
-		self.checkedItems = []
-		self.cardDict = {}
-		self.refreshMyList()
-
-
+		for id, t in enumerate(terms):
+			self.mylist.append([True, id, t.word, t.definition,t.status.getStatusText(), t.source,False])
 
 	def rowCount(self, parent):
 		return len(self.mylist)
 
 	def columnCount(self, parent):
-		return len(self.mylist[0])
+		return len(self.header)
 
 	def headerData(self, col, orientation, role):
 		if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
 			return self.header[col]
 		return None
-
-	def refreshMyList(self):
-		from crammer.model.model import Card
-		for id, t in enumerate(self.terms):
-			self.cardDict[id+1] = Card(t.word, t.definition)
-			self.mylist.append([False, id+1, t.word, t.definition,t.status.getStatusText(), t.source])
 
 	def data(self, index, role):
 		#self.refreshMyList()
@@ -90,7 +127,6 @@ class TermTableModel(QtCore.QAbstractTableModel):
 			return self.mylist[index.row()][index.column()]  # node.data method defined above (string)
 		elif role == QtCore.Qt.CheckStateRole and index.column() == 0:
 			if self.mylist[index.row()][0]:
-
 				return QtCore.Qt.Checked
 			else:
 				return QtCore.Qt.Unchecked
@@ -98,25 +134,32 @@ class TermTableModel(QtCore.QAbstractTableModel):
 			return None
 		if index.column() == 0:
 			return
+		if index.column() == 1:
+			return index.row() + 1
 		return self.mylist[index.row()][index.column()]
 
 	def getCardList(self):
-		return self.checkedItems
+		checkedItems = []
+		from crammer.model.model import Card
+		for t in self.mylist:
+			if t[0]:
+				word = t[2]
+				defin = t[3]
+				checkedItems.append(Card(word, defin))
+		return checkedItems
 
 	def setData(self, index, value, role=QtCore.Qt.DisplayRole):
 		if (role == QtCore.Qt.CheckStateRole):
 			self.mylist[index.row()][index.column()] = not self.mylist[index.row()][index.column()]
-			card = self.cardDict[self.mylist[index.row()][1]]
-			if self.mylist[index.row()][index.column()]:
-				self.checkedItems.append(card)
-			else:
-				try:
-					self.checkedItems.remove(card)
-				except ValueError:
-					pass
-		row = index.row()
-		self.mylist[index.row()][index.column()]=value
-		self.dataChanged.emit(index, index)
+		elif role == QtCore.Qt.EditRole:
+			#finish this later
+			id = self.mylist[index.row()][1]
+			self.mylist[index.row()][index.column()]=value
+			self.dataChanged.emit(index, index)
+			terms = gui.application.getTerms()
+
+			#print('changing %s' %self.termIdDict[id])
+
 		return True
 
 	def flags(self, index):
@@ -127,10 +170,31 @@ class TermTableModel(QtCore.QAbstractTableModel):
 		else:
 			return QtCore.Qt.ItemIsEnabled
 
+	def removeTerm(self, term):
+		rowsToRemove = -1
+		for row, t in enumerate(self.mylist):
+			print('%s - %s' %(t[2], term.word))
+			if t[2] == term.word:
+				print("OK")
+				rowsToRemove = row
+				del self.mylist[row]
+				break
+		if rowsToRemove != -1:
+			self.beginRemoveRows(QtCore.QModelIndex(), rowsToRemove, rowsToRemove)
+			self.removeRows(rowsToRemove, 1)
+			self.endRemoveRows()
+
+	def addTerm(self, term):
+		t = term
+		self.mylist.append([True, len(self.mylist), t.word, t.definition,t.status.getStatusText(), t.source,False])
+		self.layoutChanged.emit()
+
+
+
 class ItemDelegate(QtGui.QStyledItemDelegate):
-	def __init__(self):
+	def __init__(self,parent):
 		self.m_lastClickedIndex = None
-		super(ItemDelegate, self).__init__()
+		super(ItemDelegate, self).__init__(parent)
 
 	def paint(self, painter, option, index):
 
@@ -214,3 +278,81 @@ class ItemDelegate(QtGui.QStyledItemDelegate):
 					return True
 		return super(ItemDelegate, self).editorEvent(event, model, option, index)
 
+class ButtonDelegate(QtGui.QStyledItemDelegate):
+	def __init__(self, parent):
+		super(ButtonDelegate, self).__init__(parent)
+
+	def paint(self, painter, option, index):
+		if not self.parent().indexWidget(index):
+			self.parent().setIndexWidget(index, QtGui.QPushButton("Delete", self.parent(), clicked=functools.partial(self.parent().cellButtonClicked, index)))
+
+	def editorEvent(self, event, model, option, index):
+		return super(ButtonDelegate, self).editorEvent(event, model, option, index)
+
+class CrammerDock(QtGui.QDockWidget):
+	def __init__(self, parent):
+		self.m_lastClickedIndex = None
+		super(CrammerDock, self).__init__(parent)
+		self.setFeatures(QtGui.QDockWidget.NoDockWidgetFeatures)
+		terms = gui.application.getTerms()
+		unknownCards = terms.getUnknownCards()
+		self.toCrammer = []
+		self.parent = parent
+		self.initUI(self.toCrammer)
+
+
+	def addTerm(self, term):
+		if term not in self.toCrammer:
+			self.toCrammer.append(term)
+			self.termModel.addTerm(term)
+
+	def removeTerm(self, term):
+		if term in self.toCrammer:
+			self.toCrammer.remove(term)
+			self.termModel.removeTerm(term)
+
+	def noTerms(self):
+		return len(self.toCrammer) == 0
+
+	def getTerms(self):
+		return self.toCrammer
+
+
+	def initUI(self, terms):
+
+		self.setWindowTitle(constants.SHORT_NAME)
+		self.terms = terms
+		self.mainPanel = QtGui.QFrame()
+
+		self.termModel = TermTableModel(self.terms)
+
+		self.table_view = TableView(self)
+		self.table_view.setModel(self.termModel)
+		self.table_view.resizeColumnToContents(0)
+		self.table_view.resizeColumnToContents(1)
+		self.table_view.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Fixed)
+		self.table_view.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Fixed)
+		mainLayout = QtGui.QVBoxLayout()
+		self.mainPanel.setLayout(mainLayout)
+		bar1 = QtGui.QHBoxLayout()
+		bar1.addWidget(self.table_view)
+		mainLayout.addLayout(bar1)
+
+		bar2 = QtGui.QHBoxLayout()
+		self.startButton = QtGui.QPushButton('Start', self)
+		self.startButton.clicked.connect(self.startCrammer)
+		bar2.addWidget(self.startButton)
+		mainLayout.addLayout(bar2)
+		self.setFixedSize(600,400)
+		self.setWidget(self.mainPanel)
+
+	def startCrammer(self):
+		from crammer.gui.gui import FlashCardWindow
+		cards = self.termModel.getCardList()
+		if len(cards) > 0:
+			f = FlashCardWindow(preExistingCards = cards)
+		else:
+			print("PICK CARDS IDIOT")
+
+	def closeMe(self):
+		self.parent.resetCrammerDock()

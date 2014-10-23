@@ -43,6 +43,7 @@ class TextFrame(QtGui.QMainWindow):
 
 
 		self.setCentralWidget(self.mainPanel)
+		self.crammerDock = None
 
 
 		#self.setFixedSize(self.width(), self.height())
@@ -255,6 +256,24 @@ class TextFrame(QtGui.QMainWindow):
 		elif(e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return):
 			if marked:
 				self.getTextPanel().startTermFrame()
+		elif e.key() == QtCore.Qt.Key_Plus:
+			if marked:
+				term = text.getMarkedTermLink()
+				if term:
+					if not self.crammerDock:
+						from gui.crammerFrame import CrammerDock as CrammerDock
+						self.crammerDock = CrammerDock(self)
+						self.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.crammerDock)
+						self.crammerDock.setWindowTitle("To Crammer")
+					self.crammerDock.addTerm(term.root)
+		elif e.key() == QtCore.Qt.Key_Minus:
+			if marked:
+				term = text.getMarkedTermLink()
+				if term:
+					if self.crammerDock:
+						self.crammerDock.removeTerm(term.root)
+						if self.crammerDock.noTerms():
+							self.resetCrammerDock()
 		elif(e.key() in numPadDict):
 			if marked:
 				term = text.getMarkedTermLink()
@@ -264,6 +283,12 @@ class TextFrame(QtGui.QMainWindow):
 					term.root.updated = True
 					self.getTextPanel().update()
 					gui.application.getTerms().setDirty(True)
+
+	def resetCrammerDock(self):
+		self.crammerDock.close()
+		self.crammerDock = None
+		self.layout().activate()
+		self.resize(self.sizeHint())
 
 	def keyReleaseEvent(self, e):
 		if e.key() == QtCore.Qt.Key_Shift:
@@ -363,12 +388,17 @@ class TextPanel(QtGui.QWidget):
 			createAndAddNonActiveMenuItem(menu, "Set Status")
 			actionArr = {}
 			deleteAction = -1
+			addToCrammerAction = -1
+			removeFromCrammerAction = -1
 			if linkedWord:
 				for status in TermStatus.getAllActive():
 					tempAction = menu.addAction(status.getStatusText())
 					actionArr[tempAction] = status
 				menu.addSeparator()
 				deleteAction = menu.addAction("Delete Term")
+				menu.addSeparator()
+				addToCrammerAction = menu.addAction("Add to Crammer")
+				removeFromCrammerAction = menu.addAction("Remove From Crammer")
 			action = menu.exec_(self.mapToGlobal(e.pos()))
 			terms = gui.application.getTerms()
 			termFrame = gui.application.getTermFrame()
@@ -400,6 +430,21 @@ class TextPanel(QtGui.QWidget):
 				terms.deleteTerm(linkedWord)
 				gui.application.getText().matchWithTerms()
 				self.update()
+			elif action == addToCrammerAction:
+				if not self.frame.crammerDock:
+					from gui.crammerFrame import CrammerDock as CrammerDock
+					self.frame.crammerDock = CrammerDock(self.frame)
+					self.frame.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.frame.crammerDock)
+					self.frame.crammerDock.setWindowTitle("To Crammer")
+				self.frame.crammerDock.addTerm(linkedWord.root)
+			elif action == removeFromCrammerAction:
+				if self.frame.crammerDock:
+					self.frame.crammerDock.removeTerm(linkedWord.root)
+					if self.frame.crammerDock.noTerms():
+						self.frame.crammerDock.close()
+						self.frame.crammerDock = None
+						self.frame.layout().activate()
+						self.frame.resize(self.frame.sizeHint())
 
 
 
