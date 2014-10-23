@@ -28,6 +28,8 @@ class Terms():
 		self.rootDict = {}
 		self.termsDict = {}
 		self.deletedIDs = []
+		self.deletedRoots = []
+		self.termsCount = {}
 
 	def isLoadTermsFromFileOK(self, file):
 		import os
@@ -101,6 +103,13 @@ class Terms():
 			r = False
 		return r
 
+	def getUnknownCards(self):
+		unknownCards = []
+		for t in self.rootDict:
+			if self.rootDict[t].status not in [TermStatus.WellKnown, TermStatus.Ignored]:
+				unknownCards.append(self.rootDict[t])
+		return unknownCards
+
 	def getTermFromKey(self, key):
 		if key in self.keyIndex.keys():
 			index = self.keyIndex[key]
@@ -127,6 +136,13 @@ class Terms():
 			print(idTuple)
 			self.deletedIDs.append(idTuple)
 
+	def deleteRoot(self, rootWord):
+		if rootWord in self.rootDict:
+			rootTerm = self.rootDict[rootWord]
+			del self.rootDict[rootWord]
+			self.dirty = True
+			idTuple = (rootTerm.id,)
+			self.deletedRoots.append(idTuple)
 
 	def addTerm(self, t):
 		if t.getKey() in self.keyIndex.keys():
@@ -149,6 +165,20 @@ class Terms():
 		if not t.word in self.termsDict:
 			self.termsDict[t.word] = t
 		self.dirty = True
+		termRoot = t.root.word
+		self.addCountToRoot(termRoot)
+
+	def subtractCountFromRoot(self, rootWord):
+		self.termsCount[rootWord] -= 1
+
+	def getRootCount(self, rootWord):
+		return self.termsCount[rootWord]
+
+	def addCountToRoot(self, rootWord):
+		if rootWord not in self.termsCount:
+			self.termsCount[rootWord] = 1
+		else:
+			self.termsCount[rootWord] += 1
 
 	def match(self, text, index):
 		nextIndex = -1
@@ -252,6 +282,8 @@ class Terms():
 			if(len(self.deletedIDs) > 0):
 				print(self.deletedIDs)
 				conn.executemany('DELETE FROM word WHERE id = ?', self.deletedIDs)
+			if(len(self.deletedRoots) > 0):
+				conn.executemany('DELETE FROM terms WHERE id = ?', self.deletedRoots)
 			conn.commit()
 			conn.close()
 			self.dirty = False
@@ -310,7 +342,7 @@ class Term():
 
 	def displayWithStatusHTML(self):
 		s = ""
-		tr = self.root.translation
+		tr = self.root.definition
 		if tr == "":
 			tr = "(No Translation)"
 		return utilities.escapeHTML('%s<br>root: %s<br>%s' %(self.word, self.root.word, utilities.escapeHTML('%s%s — %s' %(s,tr, self.root.status.getStatusShortText()))))

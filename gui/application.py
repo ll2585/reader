@@ -67,6 +67,14 @@ def setTextFrame(textFrame):
 	global instance
 	instance.textFrame = textFrame
 
+def getCrammerFrame():
+	global instance
+	return instance.crammerFrame
+
+def setCrammerFrame(crammerFrame):
+	global instance
+	instance.crammerFrame = crammerFrame
+
 def getTerms():
 	global instance
 	return instance.terms
@@ -89,6 +97,7 @@ class Application():
 		self.terms = None
 		self.baseDir = None
 		self.startFrame = None
+		self.crammerFrame = None
 
 class StartFrame(QtGui.QMainWindow):
 	def __init__(self):
@@ -235,6 +244,8 @@ class StartFrame(QtGui.QMainWindow):
 	def refreshButtonClicked(self):
 		self.setDataAndPack()
 
+
+
 	def readStudy(self):
 		checkAndInitBaseDirAndLanguage()
 		lang = getLanguage()
@@ -261,12 +272,29 @@ class StartFrame(QtGui.QMainWindow):
 			'''
 			textFile = None
 			if currText=="<Vocabulary>" :
+				unknownCards = terms.getUnknownCards()
+				toCrammer = []
+				from crammer.model.model import Card
+				for c in unknownCards:
+					toCrammer.append(c)
+				from gui.crammerFrame import CrammerFrame
+				crammerFrame = getCrammerFrame()
+				if crammerFrame:
+					crammerFrame.dispose()
+				crammerFrame = CrammerFrame(toCrammer)
+				setCrammerFrame(crammerFrame)
+				self.setVisible(False)
+				crammerFrame.setVisible(True)
+
+				#import crammer.gui.gui as crammerGui
+				#crammerGui.FlashCardWindow(preExistingCards=toCrammer)
+
 				'''do this shit later
 				if terms.getData().size() > 0:
 					dlg = new VocabFilterSortSettingsDialog()
 					dlgResult = dlg.showDialog()
 					'''
-				pass
+				return
 			else:
 				textFile = os.path.join(langdir, '%s%s' %(currText, constants.TEXT_FILE_EXTENSION))
 			if os.path.isfile(textFile):

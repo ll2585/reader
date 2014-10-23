@@ -327,9 +327,16 @@ class TermFrame(QtGui.QMainWindow):
 								False):
 					return
 			if changedRoot:
+				print(self.originalRoot)
 				if not utilities.showYesNoQuestion(
 						"You have changed the Root from\n[%s] to the EXISTENT Root [%s].\n\nAre you sure?" %(self.originalRoot, self.getTfRootTerm().getTextArea().toPlainText()), True):
 					return
+				if self.originalRoot != '':
+					if terms.getRootCount(self.originalRoot) == 1:
+						terms.deleteRoot(self.originalRoot)
+					if terms.getRootCount(self.originalRoot) >= 1:
+						terms.subtractCountFromRoot(self.originalRoot)
+				terms.addCountToRoot(root)
 				t.updated = True
 			t.setTerm(term)
 			t.root =  terms.rootDict[root]
