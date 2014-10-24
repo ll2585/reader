@@ -232,6 +232,41 @@ class TextFrame(QtGui.QMainWindow):
 			self.getTextPanel().checkScrollPane()
 			self.getTextPanel().update()
 			self.updateLabel(marked, indexStart, indexEnd)
+		elif (e.key() == QtCore.Qt.Key_Down):
+			indexStart = min(text.getMarkIndexStart(),
+				text.getMarkIndexEnd())
+			indexEnd = max(text.getMarkIndexStart(),
+				text.getMarkIndexEnd())
+			if marked and indexEnd < len(text.getTextItems())-1:
+				curMarkPoint = text.getMarkedTextPoint()
+				textLayout = QtGui.QTextLayout('X', self.tp.font())
+
+				textLayout.beginLayout()
+				line = textLayout.createLine()
+				textLayout.endLayout()
+
+				#1.8 not 1.3 because i dont know how to do the new paragraph things LOL
+				fontHeight = 1.8 * (line.ascent() + line.descent() + line.leading() + 6)
+
+
+				newPoint = QtCore.QPoint(curMarkPoint.x(), curMarkPoint.y()+fontHeight)
+				nextLineTextItem =  text.getPointedTextItem(newPoint)
+				if nextLineTextItem:
+					indexEnd = text.getTextItemIndex(nextLineTextItem)
+					while text.getTextItemValueFromStartToEnd(indexEnd, indexEnd).strip() in [constants.PARAGRAPH_MARKER, '']:
+						indexEnd += 1
+					if not self.shiftPressed:
+						indexStart = indexEnd
+			elif not marked:
+				indexStart = 0
+				indexEnd = 0
+				marked = True
+				text.setRangeMarked(True)
+			text.setMarkIndexStart(indexStart)
+			text.setMarkIndexEnd(indexEnd)
+			self.getTextPanel().checkScrollPane()
+			self.getTextPanel().update()
+			self.updateLabel(marked, indexStart, indexEnd)
 		elif(e.key() == QtCore.Qt.Key_Left):
 			indexStart = min(text.getMarkIndexStart(),
 				text.getMarkIndexEnd())
@@ -246,6 +281,41 @@ class TextFrame(QtGui.QMainWindow):
 			elif not marked:
 				indexStart = len(text.getTextItems())
 				indexEnd = len(text.getTextItems())
+				marked = True
+				text.setRangeMarked(True)
+			text.setMarkIndexStart(indexStart)
+			text.setMarkIndexEnd(indexEnd)
+			self.getTextPanel().checkScrollPane()
+			self.getTextPanel().update()
+			self.updateLabel(marked, indexStart, indexEnd)
+		elif(e.key() == QtCore.Qt.Key_Up):
+			indexStart = min(text.getMarkIndexStart(),
+				text.getMarkIndexEnd())
+			indexEnd = max(text.getMarkIndexStart(),
+				text.getMarkIndexEnd())
+			if marked and indexStart > 0:
+				curMarkPoint = text.getMarkedTextPoint()
+				textLayout = QtGui.QTextLayout('X', self.tp.font())
+
+				textLayout.beginLayout()
+				line = textLayout.createLine()
+				textLayout.endLayout()
+
+				#black magic ahead
+				fontHeight = 1 * (line.ascent() + line.descent() + line.leading() + 6)
+
+				newPoint = QtCore.QPoint(curMarkPoint.x(), curMarkPoint.y()-fontHeight)
+				#print(newPoint)
+				nextLineTextItem =  text.getPointedTextItem(newPoint)
+				if nextLineTextItem and newPoint.y() > 0:
+					indexStart = text.getTextItemIndex(nextLineTextItem)
+				while text.getTextItemValueFromStartToEnd(indexStart, indexStart).strip() in [constants.PARAGRAPH_MARKER, '']:
+					indexStart -= 1
+				if not self.shiftPressed:
+					indexEnd = indexStart
+			elif not marked:
+				indexStart = len(text.getTextItems())-1
+				indexEnd = len(text.getTextItems())-1
 				marked = True
 				text.setRangeMarked(True)
 			text.setMarkIndexStart(indexStart)
@@ -511,7 +581,7 @@ class TextPanel(QtGui.QWidget):
 					text.setMarkIndexEnd(endIndex)
 				self.dragging = True
 				#endIndex = text.getMarkIndexEnd()
-				print(startIndex)
+
 			t = textItems[index].getLink()
 			if not t:
 				s = textItems[index].getTextItemValue().strip()
@@ -678,7 +748,6 @@ class TextPanel(QtGui.QWidget):
 					x = 10
 					y += 1.3 * (line.ascent() + line.descent() + line.leading() + 6)
 					lines += 1
-
 				else:
 					t = "\u200F%s%s" if rtl else "%s%s" %(item.getTextItemValue(), item.getAfterItemValue())
 					textLayout = QtGui.QTextLayout(t, self.font())
@@ -690,6 +759,7 @@ class TextPanel(QtGui.QWidget):
 						x = 10
 						y += line.ascent() + line.descent() + line.leading() + 6
 						lines += 1
+
 					l = 0
 					if item.getTextItemValue():
 						tempLay = QtGui.QTextLayout("\u200F%s" if rtl else "%s" %(item.getTextItemValue()), self.font())

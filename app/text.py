@@ -105,6 +105,12 @@ class Text():
 				return id
 		return -1
 
+	def getTextItemIndex(self, ti):
+		for id, t in enumerate(self.textItems):
+			if t == ti:
+				return id
+		return -1
+
 	def getPointedTextItem(self, p):
 		for id, t in enumerate(self.textItems):
 			if t.isPointOnTextItem(p):
@@ -250,10 +256,10 @@ class TextItem():
 
 	def isPointOnTextItem(self, p):
 		if self.textItemPosition and self.textItemDimension:
-			if (p.x() > self.textItemPosition.x()):
-				if (p.y() > self.textItemPosition.y()):
-					if (p.x() < (self.textItemPosition.x() + self.textItemDimension.width())):
-						if (p.y() < (self.textItemPosition.y() + self.textItemDimension.height())):
+			if (p.x() >= self.textItemPosition.x()):
+				if (p.y() >= self.textItemPosition.y()):
+					if (p.x() <= (self.textItemPosition.x() + self.textItemDimension.width())):
+						if (p.y() <= (self.textItemPosition.y() + self.textItemDimension.height())):
 							return True
 		return False
 
