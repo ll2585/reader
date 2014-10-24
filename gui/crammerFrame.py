@@ -10,26 +10,34 @@ import app.text as text
 import functools
 
 class CrammerFrame(QtGui.QMainWindow):
-	def __init__(self, terms):
+	def __init__(self, terms, openedByText = False, frame = None):
 		super(CrammerFrame, self).__init__()
+		self.toCrammer = terms
+		self.openedByText = openedByText
+		self.frame = frame
+		if self.openedByText:
+			self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
+			self.lower()
+		self.initUI(self.toCrammer)
+
+	def initUI(self, terms):
+
 		self.setWindowTitle(constants.SHORT_NAME)
 		self.terms = terms
 		self.mainPanel = QtGui.QFrame()
 
 		self.termModel = TermTableModel(self.terms)
 
-		table_view = TableView(self)
-		table_view.setModel(self.termModel)
-		table_view.resizeColumnToContents(0)
-		table_view.resizeColumnToContents(1)
-		table_view.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Fixed)
-		table_view.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Fixed)
+		self.table_view = TableView(self)
+		self.table_view.setModel(self.termModel)
+		self.table_view.resizeColumnToContents(0)
+		self.table_view.resizeColumnToContents(1)
+		self.table_view.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Fixed)
+		self.table_view.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Fixed)
 		mainLayout = QtGui.QVBoxLayout()
-		#mainLayout.setContentsMargins(5)
 		self.mainPanel.setLayout(mainLayout)
-		#self.mainPanel.setStyleSheet("border:5px; ")
 		bar1 = QtGui.QHBoxLayout()
-		bar1.addWidget(table_view)
+		bar1.addWidget(self.table_view)
 		mainLayout.addLayout(bar1)
 
 		bar2 = QtGui.QHBoxLayout()
@@ -40,6 +48,22 @@ class CrammerFrame(QtGui.QMainWindow):
 		self.setFixedSize(600,400)
 		self.setCentralWidget(self.mainPanel)
 
+	def addTerm(self, term):
+		if term not in self.toCrammer:
+			self.toCrammer.append(term)
+			self.termModel.addTerm(term)
+
+	def removeTerm(self, term):
+		if term in self.toCrammer:
+			self.toCrammer.remove(term)
+			self.termModel.removeTerm(term)
+
+	def noTerms(self):
+		return len(self.toCrammer) == 0
+
+	def getTerms(self):
+		return self.toCrammer
+
 	def startCrammer(self):
 		from crammer.gui.gui import FlashCardWindow
 		cards = self.termModel.getCardList()
@@ -49,26 +73,31 @@ class CrammerFrame(QtGui.QMainWindow):
 			print("PICK CARDS IDIOT")
 
 	def closeEvent(self, e):
-		import os
-		terms = gui.application.getTerms()
-		print("CLOSED")
-		termFrame = gui.application.getTermFrame()
-		if termFrame:
-			termFrame.setVisible(False)
-			termFrame.close()
-			gui.application.setTermFrame(None)
-		self.setVisible(False)
-		self.close()
-		gui.application.setTextFrame(None)
+		if not self.openedByText:
+			print("CLOSED")
+			termFrame = gui.application.getTermFrame()
+			if termFrame:
+				termFrame.setVisible(False)
+				termFrame.close()
+				gui.application.setTermFrame(None)
+			self.setVisible(False)
+			self.close()
+			gui.application.setTextFrame(None)
 
-		terms = None
-		gui.application.setTerms(terms)
+			terms = None
+			gui.application.setTerms(terms)
 
-		crammer = gui.application.getCrammerFrame()
-		crammer = None
-		gui.application.setCrammerFrame(crammer)
+			crammer = gui.application.getCrammerFrame()
+			crammer = None
+			gui.application.setCrammerFrame(crammer)
 
-		gui.application.getStartFrame().setVisible(True)
+			gui.application.getStartFrame().setVisible(True)
+		else:
+			self.frame.setFocus()
+			self.frame.resetCrammerDock()
+
+	def closeMe(self):
+		self.frame.resetCrammerDock()
 
 class TableView(QtGui.QTableView):
 

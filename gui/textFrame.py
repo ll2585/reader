@@ -261,9 +261,14 @@ class TextFrame(QtGui.QMainWindow):
 				term = text.getMarkedTermLink()
 				if term:
 					if not self.crammerDock:
-						from gui.crammerFrame import CrammerDock as CrammerDock
-						self.crammerDock = CrammerDock(self)
-						self.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.crammerDock)
+						from gui.crammerFrame import CrammerFrame as CrammerFrame
+						self.crammerDock = CrammerFrame([], True, self)
+						#self.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.crammerDock)
+
+						self.crammerDock.move(self.pos().x()+self.frameGeometry().width(),self.pos().y())
+						self.raise_()
+						self.crammerDock.lower()
+						self.crammerDock.setVisible(True)
 						self.crammerDock.setWindowTitle("To Crammer")
 					self.crammerDock.addTerm(term.root)
 		elif e.key() == QtCore.Qt.Key_Minus:
@@ -287,8 +292,8 @@ class TextFrame(QtGui.QMainWindow):
 	def resetCrammerDock(self):
 		self.crammerDock.close()
 		self.crammerDock = None
-		self.layout().activate()
-		self.resize(self.sizeHint())
+		#self.layout().activate()
+		#self.resize(self.sizeHint())
 
 	def keyReleaseEvent(self, e):
 		if e.key() == QtCore.Qt.Key_Shift:
@@ -432,19 +437,22 @@ class TextPanel(QtGui.QWidget):
 				self.update()
 			elif action == addToCrammerAction:
 				if not self.frame.crammerDock:
-					from gui.crammerFrame import CrammerDock as CrammerDock
-					self.frame.crammerDock = CrammerDock(self.frame)
-					self.frame.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.frame.crammerDock)
+					from gui.crammerFrame import CrammerFrame as CrammerFrame
+					self.frame.crammerDock = CrammerFrame([], True, self.frame)
+					#self.frame.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.frame.crammerDock)
 					self.frame.crammerDock.setWindowTitle("To Crammer")
+					self.frame.crammerDock.move(self.frame.pos().x()+self.frame.frameGeometry().width(),self.frame.pos().y())
+					self.frame.raise_()
+					self.frame.crammerDock.lower()
+					self.frame.crammerDock.setVisible(True)
 				self.frame.crammerDock.addTerm(linkedWord.root)
 			elif action == removeFromCrammerAction:
 				if self.frame.crammerDock:
 					self.frame.crammerDock.removeTerm(linkedWord.root)
 					if self.frame.crammerDock.noTerms():
-						self.frame.crammerDock.close()
-						self.frame.crammerDock = None
-						self.frame.layout().activate()
-						self.frame.resize(self.frame.sizeHint())
+						self.frame.resetCrammerDock()
+						#self.frame.layout().activate()
+						#self.frame.resize(self.frame.sizeHint())
 
 
 
