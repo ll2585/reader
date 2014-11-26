@@ -16,6 +16,7 @@ class CrammerFrame(QtGui.QMainWindow):
 		self.openedByText = openedByText
 		self.frame = frame
 		if self.openedByText:
+			print("opened by frame")
 			self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
 			self.lower()
 		self.initUI(self.toCrammer)
@@ -93,6 +94,7 @@ class CrammerFrame(QtGui.QMainWindow):
 
 			gui.application.getStartFrame().setVisible(True)
 		else:
+			print("refocus frame")
 			self.frame.setFocus()
 			self.frame.resetCrammerDock()
 
