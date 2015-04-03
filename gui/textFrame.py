@@ -638,6 +638,7 @@ class TextPanel(QtGui.QWidget):
 
 	def startTermFrame(self):
 		text = gui.application.getText()
+
 		s = text.getMarkedText(self.dragging).replace(constants.PARAGRAPH_MARKER, "")
 		if s != "":
 			t = gui.application.getTerms().getTermFromKey(s.lower())
