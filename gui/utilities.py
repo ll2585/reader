@@ -184,8 +184,9 @@ def leftTrim(s):
 	return s.lstrip()
 
 def writeStringIntoFile(dir, s):
+	import io
 	try:
-		with open(dir, 'w') as f:
+		with io.open(dir, 'w', encoding='utf-8') as f:
 			f.write(s)
 		return True
 	except OSError:

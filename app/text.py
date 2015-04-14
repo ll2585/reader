@@ -87,7 +87,17 @@ class Text():
 		return self.file
 
 	def getUnlearnedWordCount(self):
-		return 56
+		unlearnedWords = []
+		unlearnedCount = 0
+		for textItem in self.textItems:
+			link = textItem.getLink()
+			if link is None :
+				actualWord = textItem.getTextItemValue().replace(constants.PARAGRAPH_MARKER, "")
+				if actualWord != "" and actualWord not in unlearnedWords:
+					unlearnedWords.append(actualWord)
+					unlearnedCount += 1
+		return unlearnedCount
+
 
 	def isRangeMarked(self):
 		return self.rangeMarked
