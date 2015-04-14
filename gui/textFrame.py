@@ -97,23 +97,25 @@ class TextFrame(QtGui.QMainWindow):
 						if not skip:
 							if kor_root:
 								rootDef = kor_root[1]
+								if rootWord not in terms.rootDict:
+									reLookupRoot = get_root(rootDef)
+									if reLookupRoot != None:
+										rootTrans = reLookupRoot[1]
+										newID = len(terms.rootDict)+1
+										#(self, id, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status, new = True, updated = False):
+										#1 for all new roots
+										rootTerm = RootWord(newID, rootWord, rootDef, rootTrans, 'prior sentence TODO', 'sentenceCLOZETODO', 'SENTENCETODO', 'followingsentenceTODO', 'sourceTODO', 1, new=True, updated=False)
+										terms.rootDict[rootWord] = rootTerm
+								else:
+									print('should never get here lolz')
+									rootTerm = terms.rootDict[rootWord]
+								newTerm = Term(s, terms.nextID(), rootTerm, rootTerm.id, True, False)
+								terms.addTerm(newTerm)
+								textItem.setLink(newTerm)
+								terms.setDirty(True)
 							else:
 								rootDef = None
-							if rootWord not in terms.rootDict:
-								reLookupRoot = get_root(rootDef)
-								rootTrans = reLookupRoot[1]
-								newID = len(terms.rootDict)+1
-								#(self, id, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status, new = True, updated = False):
-								#1 for all new roots
-								rootTerm = RootWord(newID, rootWord, rootDef, rootTrans, 'prior sentence TODO', 'sentenceCLOZETODO', 'SENTENCETODO', 'followingsentenceTODO', 'sourceTODO', 1, new=True, updated=False)
-								terms.rootDict[rootWord] = rootTerm
-							else:
-								print('should never get here lolz')
-								rootTerm = terms.rootDict[rootWord]
-							newTerm = Term(s, terms.nextID(), rootTerm, rootTerm.id, True, False)
-							terms.addTerm(newTerm)
-							textItem.setLink(newTerm)
-							terms.setDirty(True)
+
 
 
 	def lookupButtonClicked(self, lang):

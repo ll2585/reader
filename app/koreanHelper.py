@@ -3,6 +3,8 @@ from urllib.request import urlopen
 import urllib
 
 def get_root(word):
+	if word == None: return None
+	print(word)
 	u2 = urllib.parse.quote(word)
 	url = 'http://endic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=%s' %(u2)
 	print(url)
@@ -48,6 +50,8 @@ def get_root(word):
 	return (term, definition)
 
 def get_root_korean(word):
+	from bs4 import NavigableString
+	print(word)
 	u2 = urllib.parse.quote(word)
 	url = 'http://krdic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=%s' %(u2)
 	print(url)
@@ -69,7 +73,6 @@ def get_root_korean(word):
 	if not spans:
 		return None
 	words = spans[0].find_previous(class_='section')
-
 	if not words or not words.find('strong'):
 		return None
 	term = words.find('strong').contents[0]
@@ -92,7 +95,13 @@ def get_root_korean(word):
 		definition = list.find('ul').find_next("span").get_text()
 		#print(list.find('ul').find_next("span").get_text())
 	else:
-		definition =list.find('p').contents[0]
+		allDescendants = []
+		for child in list.find('p').descendants:
+			if isinstance(child, NavigableString):
+				allDescendants.append(child.string)
+		if allDescendants:
+			definition =''.join(allDescendants)
+		else: return None
 	return (term, definition)
 
 text = '그러나 더즐리 씨는 평상시와 똑같이, 부엉이가 없는 아침을 보냈다. 그는 직원 다섯 명에게 소리 소리를 질러댔으며, 중요한 전화 몇 통을 걸어 약간 더 거칠게 소리를 질렀다. '
