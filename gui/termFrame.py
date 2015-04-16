@@ -162,7 +162,10 @@ class TermFrame(QtGui.QMainWindow):
 			terms = gui.application.getTerms()
 			editRoot = self.getTfRootTerm().getTextArea().toPlainText()
 			newRoot = editRoot
-			if newRoot in terms.rootDict:
+			if newRoot == '':
+				self.tfDefinition.getTextArea().setText('')
+				self.tfTranslation.getTextArea().setText('')
+			elif newRoot in terms.rootDict:
 				newRootTerm = terms.rootDict[newRoot]
 				self.tfDefinition.getTextArea().setText(newRootTerm.definition)
 				self.tfTranslation.getTextArea().setText(newRootTerm.translation)
