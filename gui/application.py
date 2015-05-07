@@ -660,10 +660,12 @@ class LangSettingsDialog(QtGui.QDialog):
 		font = QtGui.QFont("Courier New", 14)
 		table_view.setFont(font)
 		table_view.resizeColumnsToContents()
-
+		table_view.resizeRowsToContents()
 		self.mainLayout = QtGui.QVBoxLayout(self)
 		self.mainLayout.addWidget(table_view)
+
 		self.setLayout(self.mainLayout)
+		self.resize(table_view.size())
 		self.exec()
 
 class LangSettingsTableModel(QtCore.QAbstractTableModel):
