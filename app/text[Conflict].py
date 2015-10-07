@@ -12,7 +12,7 @@ class Text():
 		if(directory):
 			self.file = directory
 			self.text = utilities.readFileIntoString(directory)
-			#print('text is %s' %directory)
+			print('text is %s' %directory)
 			self.textItems = []
 			self.splitText()
 			self.coordSet = False

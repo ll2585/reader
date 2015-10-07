@@ -42,6 +42,10 @@ class CrammerFrame(QtGui.QMainWindow):
 		mainLayout.addLayout(bar1)
 
 		bar2 = QtGui.QHBoxLayout()
+		self.exportButton = QtGui.QPushButton('Export to CSV', self)
+		self.exportButton.clicked.connect(self.export)
+		bar2.addWidget(self.exportButton)
+
 		self.startButton = QtGui.QPushButton('Start', self)
 		self.startButton.clicked.connect(self.startCrammer)
 		bar2.addWidget(self.startButton)
@@ -100,6 +104,28 @@ class CrammerFrame(QtGui.QMainWindow):
 
 	def closeMe(self):
 		self.frame.resetCrammerDock()
+
+
+	def export(self):
+		import os, csv
+		fileName = QtGui.QFileDialog.getSaveFileName(self,
+                "Save CSV", '',
+                "CSV (*.csv);;All Files (*)")
+
+		if not fileName:
+			return
+
+		newpath = os.path.abspath(fileName)
+
+		cards = self.termModel.getCardList()
+		with open(newpath, 'w', newline='',  encoding='utf-8') as csvfile:
+			csvwriter = csv.writer(csvfile, delimiter=',',
+			                        quotechar='"', quoting=csv.QUOTE_ALL)
+			for c in cards:
+				csvwriter.writerow([c.front,c.back])
+		done = QtGui.QMessageBox()
+		done.setText("Done!")
+		done.exec_()
 
 class TableView(QtGui.QTableView):
 
@@ -370,8 +396,11 @@ class CrammerDock(QtGui.QDockWidget):
 		mainLayout.addLayout(bar1)
 
 		bar2 = QtGui.QHBoxLayout()
+		self.exportButton = QtGui.QPushButton('Export to CSV', self)
+		self.exportButton.clicked.connect(self.export)
 		self.startButton = QtGui.QPushButton('Start', self)
 		self.startButton.clicked.connect(self.startCrammer)
+		bar2.addWidget(self.exportButton)
 		bar2.addWidget(self.startButton)
 		mainLayout.addLayout(bar2)
 		self.setFixedSize(600,400)
@@ -384,6 +413,10 @@ class CrammerDock(QtGui.QDockWidget):
 			f = FlashCardWindow(preExistingCards = cards)
 		else:
 			print("PICK CARDS IDIOT")
+
+	def export(self):
+		cards = self.termModel.getCardList()
+		print(cards)
 
 	def closeMe(self):
 		self.parent.resetCrammerDock()
