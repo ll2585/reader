@@ -3,12 +3,12 @@ here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.normpath(os.path.join(here, '../img')))
 
 SHORT_VERSION = "0.8.6"
-VERSION = "%s (28-Aug-2012)" %(SHORT_VERSION)
+VERSION = "{0} (28-Aug-2012)".format(SHORT_VERSION)
 
 SHORT_NAME = "FLTR"
 LONG_NAME = "Foreign Language Text Reader"
 WEBSITE = "http://fltr.googlecode.com"
-COPYRIGHT = "Copyright © 2012 %s Developers" %(SHORT_NAME)
+COPYRIGHT = "Copyright © 2012 {0} Developers".format(SHORT_NAME)
 
 ICONPATH = os.path.normpath(os.path.join(here, '../img/icon128.png'))
 LOCK_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrlock')
@@ -17,7 +17,7 @@ PREF_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrprefsPYTHON')
 TEXT_DIR_SUFFIX = "_Texts"
 TEXT_DIR_SUFFIX_LENGTH = len(TEXT_DIR_SUFFIX)
 
-LANG_SETTINGS_FILE_SUFFIX = "_Settings.csv";
+LANG_SETTINGS_FILE_SUFFIX = "_Settings.csv"
 LANG_SETTINGS_FILE_SUFFIX_LENGTH = len(LANG_SETTINGS_FILE_SUFFIX)
 
 DB = 'fltr.db'

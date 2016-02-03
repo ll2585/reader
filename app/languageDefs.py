@@ -2,7 +2,7 @@ import sys, os
 here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.normpath(os.path.join(here, '../app')))
 from app.languageDef import LanguageDefinition
-class LanguageDefinitions():
+class LanguageDefinitions:
 	def __init__(self):
 		self.defArray = []
 		self.defArray.append(LanguageDefinition("English", "en", True, False, "",

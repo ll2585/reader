@@ -1,4 +1,4 @@
-class LanguageDefinition():
+class LanguageDefinition:
 	def __init__(self, name, isoCode, ttsAvailable, biggerFont, wordCharRegExp, makeCharacterWord, removeSpaces, rightToLeft):
 		self.name = name
 		self.isoCode = isoCode

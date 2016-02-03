@@ -87,7 +87,7 @@ def setTermFrame(termFrame):
 	global instance
 	instance.termFrame = termFrame
 
-class Application():
+class Application:
 	def __init__(self):
 		self.langDefs = languageDefs.LanguageDefinitions()
 		self.textFrame = None
@@ -170,6 +170,7 @@ class StartFrame(QtGui.QMainWindow):
 		dir = utilities.selectDirectory(self, "Select %s data directory..." %(constants.SHORT_NAME), os.path.expanduser('~'))
 		if ((dir != None) and os.path.isdir(dir)):
 				preferences.putCurrMainDir(dir)
+				preferences.putDBPath(dir)
 				preferences.putCurrLang("[None]")
 				preferences.putCurrText("[None]")
 				self.setDataAndPack()
@@ -244,8 +245,6 @@ class StartFrame(QtGui.QMainWindow):
 	def refreshButtonClicked(self):
 		self.setDataAndPack()
 
-
-
 	def readStudy(self):
 		checkAndInitBaseDirAndLanguage()
 		lang = getLanguage()
@@ -256,7 +255,8 @@ class StartFrame(QtGui.QMainWindow):
 			termFile = os.path.join(getBaseDir(), '%s%s' %(currLang,constants.WORDS_FILE_SUFFIX))
 			terms = Terms()
 			setTerms(terms)
-			dbPath = os.path.join(getBaseDir(), constants.DB)
+			dbPath = os.path.join(preferences.getDBPath(), constants.DB)
+
 			#if not terms.isLoadTermsFromFileOK(termFile):
 			if not terms.isLoadTermsFromDBOK(termFile, dbPath):
 				utilities.showErrorMessage("Loading Words File\n"
@@ -534,6 +534,7 @@ def checkAndInitBaseDirAndLanguage():
 		preferences.putCurrText("[None]")
 		preferences.putCurrLang("[None]")
 		preferences.putCurrMainDir("[Select…]")
+		preferences.putDBPath("[Select…]")
 
 def getBaseDir():
 	global instance

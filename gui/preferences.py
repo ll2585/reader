@@ -54,7 +54,6 @@ def getCurrPopupMenusNested():
 def putCurrVocabMaxResult(i):
 	putIntPreference("currVocabMaxResults", i)
 
-
 def putCurrVocabSortOrder(i):
 	putIntPreference("currVocabSortOrder", i)
 
@@ -104,17 +103,14 @@ def putBoolPreference(key, value):
 def putCurrDialogFontSizePercent(i):
 	putIntPreference("currDialogFontSizePercent", i)
 
-def putCurrLang(s):
-	putPreference("currLang", s)
-
-
 def putCurrLookAndFeel(s):
 	putPreference("currLookAndFeel", s)
 
+def putDBPath(s):
+	putPreference("db", s)
 
-def putCurrMainDir(s):
-	putPreference("currMainDir", s)
-
+def getDBPath():
+	return getPreference("db", "fltr.db")
 
 def putCurrPopupMenusNested(b):
 	putBoolPreference("currPopupMenusNested", b)
