@@ -26,8 +26,29 @@ class TermFrame(QtGui.QMainWindow):
 
 		formLayout.addRow(QtGui.QLabel('Term:'), self.tfTerm.getTextAreaScrollPane())
 		self.tfRootTerm = MultiLineTextField('', 200, 2, 35, self)
-		formLayout.addRow(QtGui.QLabel('Root Term:'), self.tfRootTerm.getTextAreaScrollPane())
+		root_bar =  QtGui.QHBoxLayout()
+		self.def_is_root_checkbox = QtGui.QCheckBox("Definition is Root Definition?")
+		def make_root_def_def():
+			if self.def_is_root_checkbox.isChecked():
+				self.definition.setText(self.tfDefinition.getTextArea().toPlainText())
+			self.definition.getTextArea().setDisabled(self.def_is_root_checkbox.isChecked())
+		self.def_is_root_checkbox.clicked.connect(make_root_def_def)
+
+		root_bar.addWidget(self.tfRootTerm.getTextAreaScrollPane())
+		root_bar.addWidget(self.def_is_root_checkbox)
+		formLayout.addRow(QtGui.QLabel('Root Term:'), root_bar)
+
 		self.tfRootTerm.addTextChangedEvent(self.rootEditted)
+
+		test_tabs = CustomTabWidget()
+		test_defs = MultiLineTextField('', 200, 2, 35, self)
+		test_tabs.addTab(test_defs.getTextAreaScrollPane(), '1')
+		test_tabs.tab.setTabButton(0, QtGui.QTabBar.RightSide,None)
+		formLayout.addRow(QtGui.QLabel('Definition:'), test_tabs)
+
+		self.definition = MultiLineTextField('', 200, 4, 35, self)
+		formLayout.addRow(QtGui.QLabel('Definition:'), self.definition.getTextAreaScrollPane())
+
 		self.tfDefinition = MultiLineTextField('', 200, 4, 35, self)
 		formLayout.addRow(QtGui.QLabel('Root Definition:'), self.tfDefinition.getTextAreaScrollPane())
 		self.tfTranslation = MultiLineTextField('', 200, 4, 35, self)
@@ -361,6 +382,8 @@ class MultiLineTextField():
 		self.setHeight(lines)
 		self.textArea.setLineWrapColumnOrWidth(width)
 
+		self.tab_widget = QtGui.QTabWidget()
+
 		self.textAreaScrollPane = QtGui.QScrollArea()
 
 		self.textAreaScrollPane.setWidgetResizable(False)
@@ -380,6 +403,9 @@ class MultiLineTextField():
 	def getTextArea(self):
 		return self.textArea
 
+	def setText(self, text):
+		self.textArea.setText(text)
+
 	def setHeight(self, rows):
 		m = self.textArea.fontMetrics()
 		rowHeight = m.lineSpacing()
@@ -388,6 +414,7 @@ class MultiLineTextField():
 	def addTextChangedEvent(self, callback):
 		self.textArea.textChanged.connect(callback)
 		self.textArea.event = True
+
 
 class customEdit(QtGui.QTextEdit):
 	def __init__(self, par):
@@ -399,3 +426,94 @@ class customEdit(QtGui.QTextEdit):
 		QtGui.QTextEdit.focusOutEvent(self,e)
 		if(self.event):
 			self.parent.rootChanged()
+
+class WidgetWrapper(QtGui.QWidget):
+	def __init__(self, text, maxChar, lines, width, frame):
+		QtGui.QWidget.__init__(self)
+		f = MultiLineTextField(text, maxChar, lines, width, frame)
+		
+class TabBarPlus(QtGui.QTabBar):
+	"""Tab bar that has a plus button floating to the right of the tabs."""
+
+	plusClicked = QtCore.pyqtSignal()
+
+	def __init__(self):
+		super().__init__()
+
+		# Plus Button
+		self.plusButton = QtGui.QPushButton("+")
+		self.plusButton.setParent(self)
+		self.plusButton.setMaximumSize(20, 20) # Small Fixed size
+		self.plusButton.setMinimumSize(20, 20) # Small Fixed size
+		self.plusButton.clicked.connect(self.plusClicked.emit)
+		self.movePlusButton() # Move to the correct location
+	# end Constructor
+
+	def sizeHint(self):
+		"""Return the size of the TabBar with increased width for the plus button."""
+		sizeHint = QtGui.QTabBar.sizeHint(self) 
+		width = sizeHint.width()
+		height = sizeHint.height()
+		return QtCore.QSize(width+25, height)
+	# end tabSizeHint
+
+	def resizeEvent(self, event):
+		"""Resize the widget and make sure the plus button is in the correct location."""
+		super().resizeEvent(event)
+
+		self.movePlusButton()
+	# end resizeEvent
+
+	def tabLayoutChange(self):
+		"""This virtual handler is called whenever the tab layout changes.
+		If anything changes make sure the plus button is in the correct location.
+		"""
+		super().tabLayoutChange()
+
+		self.movePlusButton()
+	# end tabLayoutChange
+
+	def movePlusButton(self):
+		"""Move the plus button to the correct location."""
+		# Find the width of all of the tabs
+		size = 0
+		for i in range(self.count()):
+			size += self.tabRect(i).width()
+
+		# Set the plus button location in a visible area
+		h = self.geometry().top()
+		w = self.width()
+		if size > w: # Show just to the left of the scroll buttons
+			self.plusButton.move(w-54, h)
+		else:
+			self.plusButton.move(size, h)
+	# end movePlusButton
+# end class MyClass
+
+class CustomTabWidget(QtGui.QTabWidget):
+	"""Tab Widget that that can have new tabs easily added to it."""
+
+	def __init__(self):
+		super().__init__()
+
+		# Tab Bar
+		self.tab = TabBarPlus()
+		self.setTabBar(self.tab)
+
+		# Properties
+		self.setMovable(False)
+		self.setTabsClosable(True)
+
+
+		# Signals
+
+		self.tab.plusClicked.connect(lambda: self.tab.addTab(str(self.count()+1)))
+		self.tabCloseRequested.connect(self.remove_from_position)
+
+	def remove_from_position(self, position):
+		if position != 0:
+			self.tab.removeTab(position)
+		for i in range(self.count()):
+			self.tab.setTabText(i, str(i+1))
+	# end Constructor
+# end class CustomTabWidget
