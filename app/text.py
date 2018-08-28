@@ -33,7 +33,7 @@ class Text():
 			#no idea what this does
 			pass
 		text = text.replace("\\s{2,", " ")
-		substitutions = gui.application.getLanguage().getCharSubstitutions().split("\\|")
+		substitutions = gui.application.getLanguage().get_char_substitutions().split("\\|")
 		for subst in substitutions:
 			if "=" in subst:
 				fromto = (subst + "=x").split("=")
@@ -174,7 +174,7 @@ class Text():
 					if not term:
 						s = ti.getTextItemValue()
 					else:
-						s = term.getTerm()
+						s = term.get_term()
 				else:
 					s = ''.join([x.getTextItemValue()+x.getAfterItemValue() for x in self.textItems[indexStart:indexEnd]])
 					s += self.textItems[indexEnd].getTextItemValue()
@@ -217,7 +217,7 @@ class Text():
 				if not term:
 					s = ti.getTextItemValue()
 				else:
-					s = term.getTerm()
+					s = term.get_term()
 			else:
 				s = ''.join([x.getTextItemValue()+x.getAfterItemValue() for x in self.textItems[start:end]])
 				s += self.textItems[end].getTextItemValue()
@@ -294,7 +294,7 @@ class TextItem():
 		return "[%s / %s]" %(self.textItemValue, self.afterItemValue)
 
 	def getStatus(self):
-		return self.term.getStatus()
+		return self.term.get_status()
 
 	def setStatus(self, status):
 		self.term.setStatus(status)

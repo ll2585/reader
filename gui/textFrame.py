@@ -4,6 +4,8 @@ import gui.preferences as preferences
 import gui.application
 from app.TermStatus import TermStatus as TermStatus
 import app.TermStatus
+import sip
+sip.setapi('QString', 2)
 from PyQt4 import QtGui, QtCore
 from gui.termFrame import TermFrame
 import app.text as text
@@ -53,68 +55,116 @@ class TextFrame(QtGui.QMainWindow):
 
 		self.shiftPressed = False
 
+
+	#TODO: get rid of root
 	def lookupNaver(self):
-		from app.koreanHelper import get_root, get_root_korean
-		from app.terms import  RootWord, Term
+		from app.koreanHelper import get_lemma, get_lemma_korean
+		from app.terms import  Lemma, Term
 		terms = gui.application.getTerms()
 		text = gui.application.getText()
 		count = 0
 		maxcount = 30000
+		language = gui.application.getLanguage().getLangName()
 
 		for textItem in text.getTextItems():
-			print(textItem)
 			skip = False
-			foundRoot = False
-			s = textItem.textItemValue
-			if(s.replace(constants.PARAGRAPH_MARKER, "").strip() != ''):
-				if not s in terms.termsDict:
-					print(s)
+			found_lemma = False
+			term_word = textItem.textItemValue
+			if(term_word.replace(constants.PARAGRAPH_MARKER, "").strip() != ''):
+				#TODO only doing the first one again...
+				term_word_found_but_no_lemma = term_word in terms.real_term_dict and len(terms.real_term_dict[term_word][0].possible_lemmas)==0
+				if not term_word in terms.real_term_dict or term_word_found_but_no_lemma:
 					if count > maxcount: break
 					count += 1
-					root = get_root(s)
-					if(root):
-						rootWord = root[0][0]
-						rootTrans = root[1]
+					lemma = get_lemma(term_word)
+					if(lemma):
+						lemma_word = lemma[0][0]
+						lemma_translation = lemma[1]
 					else:
-						rootWord = None
-						rootTrans = None
-					if rootWord and rootWord in terms.rootDict:
-						rootTerm = terms.rootDict[rootWord]
-						foundRoot = True
-					if foundRoot:
-						print('found root skipping')
-						newTerm = Term(s, terms.nextID(), rootTerm, rootTerm.id, True, False)
-						terms.addTerm(newTerm)
-						textItem.setLink(newTerm)
+						lemma_word = None
+						lemma_translation = None
+					if lemma_word and lemma_word in terms.real_lemma_dict:
+						#gonna be the first one
+						lemma_obj = terms.real_lemma_dict[lemma_word][0]
+						lemma_id = lemma_obj.id
+						found_lemma = True
+					if found_lemma:
+						print('found lemma skipping')
+						if term_word_found_but_no_lemma:
+							term_obj = terms.real_term_dict[term_word][0]
+							term_id = term_obj.id
+						else:
+							term_id = terms.get_next_term_id_and_increment()
+							term_obj = Term(term_word, term_id, lemma_obj, lemma_obj.id, True, False)
+							terms.add_term(term_obj)
+							textItem.setLink(term_obj)
 						terms.setDirty(True)
+						print("adding lemma {0} to {1}".format(lemma_id, term_id))
+						#no notes
+						term_obj.add_new_lemma(lemma_id, language, '')
+						terms.joined_info.append(
+							{'lemma_id': lemma_id, 'term_id': term_id, 'language': language, 'notes': ''})
+						continue
 					else:
-						kor_root = get_root_korean(s)
-						if not root and kor_root:
-							rootWord = kor_root[0]
-						elif not root and not kor_root:
-							print("OOPS")
+						korean_lemma = get_lemma_korean(term_word)
+						if not lemma and korean_lemma:
+							lemma_word = korean_lemma[0]
+						elif not lemma and not korean_lemma:
+							print("OOPS couldn't find {0}".format(textItem))
 							skip = True
 						if not skip:
-							if kor_root:
-								rootDef = kor_root[1]
-								if rootWord not in terms.rootDict:
-									reLookupRoot = get_root(rootDef)
-									if reLookupRoot != None:
-										rootTrans = reLookupRoot[1]
-										newID = len(terms.rootDict)+1
+							if korean_lemma:
+								lemma_definition = korean_lemma[1]
+								if lemma_word not in terms.real_lemma_dict:
+									lookup_for_translation = get_lemma(lemma_word)
+									if lookup_for_translation != None:
+										lemma_translation = lookup_for_translation[1]
+										lemma_id = terms.get_next_lemma_id_and_increment()
 										#(self, id, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status, new = True, updated = False):
 										#1 for all new roots
-										rootTerm = RootWord(newID, rootWord, rootDef, rootTrans, 'prior sentence TODO', 'sentenceCLOZETODO', 'SENTENCETODO', 'followingsentenceTODO', 'sourceTODO', 1, new=True, updated=False)
-										terms.rootDict[rootWord] = rootTerm
+										lemma_obj = Lemma(lemma_id, lemma_word, lemma_definition, lemma_translation, 'prior sentence TODO', 'sentenceCLOZETODO', 'SENTENCETODO', 'followingsentenceTODO', 'sourceTODO', 1, new=True, updated=False)
+										if lemma_obj not in terms.real_lemma_dict:
+											terms.real_lemma_dict[lemma_word] = []
+										terms.real_lemma_dict[lemma_word].append(lemma_obj)
+										terms.lemma_id_dict[lemma_id] = lemma_obj
 								else:
 									print('should never get here lolz')
-									rootTerm = terms.rootDict[rootWord]
-								newTerm = Term(s, terms.nextID(), rootTerm, rootTerm.id, True, False)
-								terms.addTerm(newTerm)
-								textItem.setLink(newTerm)
+									lemma_obj = terms.real_lemma_dict[lemma_word][0]
+									lemma_id = lemma_obj.id
+									if term_word_found_but_no_lemma:
+										term_obj = terms.real_term_dict[term_word][0]
+										term_id = term_obj.id
+									else:
+										term_id = terms.get_next_term_id_and_increment()
+										term_obj = Term(term_word, term_id, lemma_obj, lemma_obj.id, True, False)
+										terms.add_term(term_obj)
+										textItem.setLink(term_obj)
+									terms.setDirty(True)
+									print("adding lemma {0} to {1}".format(lemma_id, term_id))
+									# no notes
+									term_obj.add_new_lemma(lemma_id, language, '')
+									terms.joined_info.append(
+										{'lemma_id': lemma_id, 'term_id': term_id, 'language': language,
+										 'notes': ''})
+									continue
+								if term_word_found_but_no_lemma:
+									term_obj = terms.real_term_dict[term_word][0]
+									term_id = term_obj.id
+								else:
+									term_id = terms.get_next_term_id_and_increment()
+									term_obj = Term(term_word, term_id, lemma_obj, lemma_obj.id, True, False)
+									terms.add_term(term_obj)
+									textItem.setLink(term_obj)
+								print("adding lemma {0} to {1}".format(lemma_id, term_id))
+								# no notes
+								term_obj.add_new_lemma(lemma_id, language, '')
+								terms.joined_info.append(
+									{'lemma_id': lemma_id, 'term_id': term_id, 'language': language,
+									 'notes': ''})
 								terms.setDirty(True)
+								continue
 							else:
-								rootDef = None
+								lemma_definition = None
 
 
 
@@ -196,7 +246,7 @@ class TextFrame(QtGui.QMainWindow):
 				recursiveSetChildFocusPolicy(childQWidget)
 		recursiveSetChildFocusPolicy(self)
 
-
+	#TODO: get rid of root
 	def keyPressEvent(self, e):
 		if e.isAutoRepeat() and e.key() == QtCore.Qt.Key_Shift:
 			return
@@ -382,7 +432,7 @@ class TextFrame(QtGui.QMainWindow):
 				self.getLabinfo().setText(
 							"<html><div style=\"text-align:%s;width:%s;\">%s</div></html>"
 							%("right" if gui.application.getLanguage().getRightToLeft() else "left",
-									preferences.getCurrWidthTextPanel(), term.displayWithStatusHTML()))
+									preferences.getCurrWidthTextPanel(), term.display_with_status_html()))
 			else:
 				s = text.getTextItemValueFromStartToEnd(startIndex, endIndex).strip()
 				if s != "" and s != constants.PARAGRAPH_MARKER:
@@ -433,7 +483,7 @@ class TextPanel(QtGui.QWidget):
 		if position:
 			self.scrollArea.ensureVisible(position.x(), position.y())
 
-
+	#TODO: get rid of root
 	def contextMenuEvent(self, e):
 		def createAndAddNonActiveMenuItem(menu, text):
 			action = QtGui.QAction("･･･ %s ･･･" %text, menu)
@@ -599,7 +649,7 @@ class TextPanel(QtGui.QWidget):
 				self.frame.getLabinfo().setText(
 								"<html><div style=\"text-align:%s;width:%s;\">%s</div></html>"
 								%("right" if gui.application.getLanguage().getRightToLeft() else "left",
-										preferences.getCurrWidthTextPanel(), t.displayWithStatusHTML()))
+										preferences.getCurrWidthTextPanel(), t.display_with_status_html()))
 				#utilities.setComponentOrientation(self.frame.getLabinfo())
 				#utilities.setHorizontalAlignment(self.frame.getLabinfo())
 			self.frame.resize(self.frame.sizeHint())
@@ -701,7 +751,7 @@ class TextPanel(QtGui.QWidget):
 						if not term:
 							c = TermStatus.Null.getStatusColor()
 						else:
-							c = term.getStatus().getStatusColor()
+							c = term.get_status().getStatusColor()
 						g2d.setBrush(c)
 						if (notLastWord):
 							g2d.fillRect(QtCore.QRectF(p, d), c)

@@ -3,115 +3,116 @@ import app.constants as constants
 import gui.utilities as utilities
 
 FILE_IDENTIFIER = "FLTRLANGPREFS"
-KEYcharSubstitutions = "charSubstitutions"
-DFTcharSubstitutions = "´='|`='|’='|‘='|′='|‵='"
+KEY_char_substitutions = "charSubstitutions"
+default_char_substitutions = "´='|`='|’='|‘='|′='|‵='"
 
-KEYdictionaryURL1 = "dictionaryURL1"
-DFTdictionaryURL1 = "http://translate.google.com/?ie=UTF-8&sl=auto&tl=en&text=###"
+KEY_dictionary_url_1 = "dictionaryURL1"
+default_dictionary_url_1 = "http://translate.google.com/?ie=UTF-8&sl=auto&tl=en&text=###"
 
-KEYdictionaryURL2 = "dictionaryURL2"
-DFTdictionaryURL2 = "http://endic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=###"
+KEY_dictionary_url_2 = "dictionaryURL2"
+default_dictionary_url_2 = "http://endic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=###"
 
-KEYdictionaryURL3 = "dictionaryURL3"
-DFTdictionaryURL3 = ""
+KEY_dictionary_url_3 = "dictionaryURL3"
+default_dictionary_url_3 = ""
 
-KEYopenAutomaticallyURL1 = "openAutomaticallyURL1"
-DFTopenAutomaticallyURL1 = "0"
+KEY_open_automatically_url_1 = "openAutomaticallyURL1"
+default_open_automatically_url_1 = "0"
 
-KEYopenAutomaticallyURL2 = "openAutomaticallyURL2"
-DFTopenAutomaticallyURL2 = "0"
+KEY_open_automatically_url_2 = "openAutomaticallyURL2"
+default_open_automatically_url_2 = "0"
 
-KEYopenAutomaticallyURL3 = "openAutomaticallyURL3"
-DFTopenAutomaticallyURL3 = "0"
+KEY_open_automatically_url_3 = "openAutomaticallyURL3"
+default_open_automatically_url_3 = "0"
 
-KEYfontName = "fontName"
-DFTfontName = "Dialog"
+KEY_font_name = "fontName"
+default_font_name = "Dialog"
 
-KEYfontSize = "fontSize"
-DFTfontSize = "20"
+KEY_font_size = "fontSize"
+default_font_size = "20"
 
-KEYstatusFontName = "statusFontName"
-DFTstatusFontName = "Dialog"
+KEY_status_font_name = "statusFontName"
+default_status_font_name = "Dialog"
 
-KEYstatusFontSize = "statusFontSize"
-DFTstatusFontSize = "15"
+KEY_status_font_size = "statusFontSize"
+default_status_font_size = "15"
 
-KEYwordCharRegExp = "wordCharRegExp"
-DFTwordCharRegExp = "\u4E00-\u9FFF\uF900-\uFAFF\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A0"
+KEY_word_char_regex = "wordCharRegExp"
+default_word_char_regex = "\u4E00-\u9FFF\uF900-\uFAFF\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A0"
 
-KEYwordEncodingURL1 = "wordEncodingURL1"
-DFTwordEncodingURL1 = constants.ENCODING
+KEY_word_encoding_url_1 = "wordEncodingURL1"
+default_word_encoding_url_1 = constants.ENCODING
 
-KEYwordEncodingURL2 = "wordEncodingURL2"
-DFTwordEncodingURL2 = constants.ENCODING
+KEY_word_encoding_url_2 = "wordEncodingURL2"
+default_word_encoding_url_2 = constants.ENCODING
 
-KEYwordEncodingURL3 = "wordEncodingURL3"
-DFTwordEncodingURL3 = constants.ENCODING
+KEY_word_encoding_url_3 = "wordEncodingURL3"
+default_word_encoding_url_3 = constants.ENCODING
 
-KEYmakeCharacterWord = "makeCharacterWord"
-DFTmakeCharacterWord = "0"
+KEY_make_character_word = "makeCharacterWord"
+default_make_character_word = "0"
 
-KEYremoveSpaces = "removeSpaces"
-DFTremoveSpaces = "0"
+KEY_remove_spaces = "removeSpaces"
+default_remove_spaces = "0"
 
-KEYrightToLeft = "rightToLeft"
-DFTrightToLeft = "0"
+KEY_right_to_left = "rightToLeft"
+default_right_to_left = "0"
 
-KEYexportTemplate = "exportTemplate"
-DFTexportTemplate = "$w\\t$t\\t$s\\t$r\\t$a\\t$k"
+KEY_export_template = "exportTemplate"
+default_export_template = "$w\\t$t\\t$s\\t$r\\t$a\\t$k"
 
-KEYexportStatuses = "exportStatuses"
-DFTexportStatuses = "1|2|3|4"
+KEY_export_statuses = "exportStatuses"
+default_export_statuses = "1|2|3|4"
 
-KEYdoExport = "doExport"
-DFTdoExport = "1"
-class Language():
-	def __init__(self, prefFile):
+KEY_do_export = "doExport"
+default_do_export = "1"
+
+class Language:
+	def __init__(self, pref_file):
 		super(Language, self).__init__()
-		self.langFile = prefFile
+		self.langFile = pref_file
 		self.textDir = os.path.join(os.path.dirname(self.langFile), '%s%s'%(self.getLangName(), constants.TEXT_DIR_SUFFIX))
 
 		import configparser
 		config = configparser.ConfigParser()
-		config.read(prefFile, encoding = constants.ENCODING)
-		self.langPrefs = config
+		config.read(pref_file, encoding = constants.ENCODING)
+		self.lang_prefs = config
 		self.saveFile()
 
-	def getBoolPref(self, key, def_):
+	def get_bool_pref(self, key, def_):
 		return self.getIntPref(key, def_) != 0
 
-	def getCharSubstitutions(self):
-		return self.getPref(KEYcharSubstitutions,
-				DFTcharSubstitutions)
+	def get_char_substitutions(self):
+		return self.getPref(KEY_char_substitutions,
+		                    default_char_substitutions)
 
-	def getDictionaryURL1(self):
-		return self.getPref(KEYdictionaryURL1, DFTdictionaryURL1)
+	def get_dictionary_url_1(self):
+		return self.getPref(KEY_dictionary_url_1, default_dictionary_url_1)
 
-	def getDictionaryURL2(self):
-		return self.getPref(KEYdictionaryURL2, DFTdictionaryURL2)
+	def get_dictionary_url_2(self):
+		return self.getPref(KEY_dictionary_url_2, default_dictionary_url_2)
 
-	def getDictionaryURL3(self):
-		return self.getPref(KEYdictionaryURL3, DFTdictionaryURL3)
+	def get_dictionary_url_3(self):
+		return self.getPref(KEY_dictionary_url_3, default_dictionary_url_3)
 	
-
+	#TODO: finish refactoring the names of functions to meet standards....
 	def getDoExport(self):
-		return self.getBoolPref(KEYdoExport, DFTdoExport)
+		return self.get_bool_pref(KEY_do_export, default_do_export)
 	
 
 	def getExportStatuses(self):
-		return self.getPref(KEYexportStatuses, DFTexportStatuses)
+		return self.getPref(KEY_export_statuses, default_export_statuses)
 	
 
 	def getExportTemplate(self):
-		return self.getPref(KEYexportTemplate, DFTexportTemplate)
+		return self.getPref(KEY_export_template, default_export_template)
 	
 
 	def getFontName(self):
-		return self.getPref(KEYfontName, DFTfontName)
+		return self.getPref(KEY_font_name, default_font_name)
 	
 
 	def getFontSize(self):
-		return self.getIntPref(KEYfontSize, DFTfontSize)
+		return self.getIntPref(KEY_font_size, default_font_size)
 	
 
 	def getIntPref(self, key, def_):
@@ -131,23 +132,23 @@ class Language():
 		return tail[:(len(tail) - constants.LANG_SETTINGS_FILE_SUFFIX_LENGTH)]
 
 	def getMakeCharacterWord(self):
-		return self.getBoolPref(KEYmakeCharacterWord,
-				DFTmakeCharacterWord)
+		return self.get_bool_pref(KEY_make_character_word,
+		                          default_make_character_word)
 	
 
 	def getOpenAutomaticallyURL1(self):
-		return self.getBoolPref(KEYopenAutomaticallyURL1,
-				DFTopenAutomaticallyURL1)
+		return self.get_bool_pref(KEY_open_automatically_url_1,
+		                          default_open_automatically_url_1)
 	
 
 	def getOpenAutomaticallyURL2(self):
-		return self.getBoolPref(KEYopenAutomaticallyURL2,
-				DFTopenAutomaticallyURL2)
+		return self.get_bool_pref(KEY_open_automatically_url_2,
+		                          default_open_automatically_url_2)
 	
 
 	def getOpenAutomaticallyURL3(self):
-		return self.getBoolPref(KEYopenAutomaticallyURL3,
-				DFTopenAutomaticallyURL3)
+		return self.get_bool_pref(KEY_open_automatically_url_3,
+		                          default_open_automatically_url_3)
 	
 
 	def getPref(self, key, def_):
@@ -158,20 +159,20 @@ class Language():
 		return value
 
 	def getRemoveSpaces(self):
-		return self.getBoolPref(KEYremoveSpaces, DFTremoveSpaces)
+		return self.get_bool_pref(KEY_remove_spaces, default_remove_spaces)
 	
 
 	def getRightToLeft(self):
-		return self.getBoolPref(KEYrightToLeft, DFTrightToLeft)
+		return self.get_bool_pref(KEY_right_to_left, default_right_to_left)
 	
 
 	def getStatusFontName(self):
-		return self.getPref(KEYstatusFontName, DFTstatusFontName)
+		return self.getPref(KEY_status_font_name, default_status_font_name)
 	
 
 	def getStatusFontSize(self):
-		return self.getIntPref(KEYstatusFontSize,
-				DFTstatusFontSize)
+		return self.getIntPref(KEY_status_font_size,
+		                       default_status_font_size)
 	
 
 	def getTextDir(self):
@@ -183,11 +184,11 @@ class Language():
 			return ""
 		u = ""
 		if (linkNo == 1):
-			u = self.getDictionaryURL1()
+			u = self.get_dictionary_url_1()
 		elif (linkNo == 2):
-			u = self.getDictionaryURL2()
+			u = self.get_dictionary_url_2()
 		elif (linkNo == 3):
-			u = self.getDictionaryURL3()
+			u = self.get_dictionary_url_3()
 		try:
 			from urllib.parse import urlparse
 			url = urlparse(u)
@@ -196,32 +197,32 @@ class Language():
 			return ""
 
 	def getWordCharRegExp(self):
-		return self.getPref(KEYwordCharRegExp, DFTwordCharRegExp)
+		return self.getPref(KEY_word_char_regex, default_word_char_regex)
 	
 
 	def getWordEncodingURL1(self):
-		return self.getPref(KEYwordEncodingURL1,
-				DFTwordEncodingURL1)
+		return self.getPref(KEY_word_encoding_url_1,
+		                    default_word_encoding_url_1)
 	
 
 	def getWordEncodingURL2(self):
-		return self.getPref(KEYwordEncodingURL2,
-				DFTwordEncodingURL2)
+		return self.getPref(KEY_word_encoding_url_2,
+		                    default_word_encoding_url_2)
 	
 
 	def getWordEncodingURL3(self):
-		return self.getPref(KEYwordEncodingURL3,
-				DFTwordEncodingURL3)
+		return self.getPref(KEY_word_encoding_url_3,
+		                    default_word_encoding_url_3)
 	
 
 	def isURLset(self, linkNo):
 		URL = ""
 		if (linkNo == 1):
-			URL = self.getDictionaryURL1()
+			URL = self.get_dictionary_url_1()
 		elif (linkNo == 2):
-			URL = self.getDictionaryURL2()
+			URL = self.get_dictionary_url_2()
 		elif (linkNo == 3):
-			URL = self.getDictionaryURL3()
+			URL = self.get_dictionary_url_3()
 		return URL.startswith(constants.URL_BEGIN)
 	
 
@@ -232,15 +233,15 @@ class Language():
 		encoding = ""
 		autoOpen = False
 		if (linkNo == 1):
-			URL = self.getDictionaryURL1()
+			URL = self.get_dictionary_url_1()
 			encoding = self.getWordEncodingURL1()
 			autoOpen = self.getOpenAutomaticallyURL1()
 		elif (linkNo == 2):
-			URL = self.getDictionaryURL2()
+			URL = self.get_dictionary_url_2()
 			encoding = self.getWordEncodingURL2()
 			autoOpen = self.getOpenAutomaticallyURL2()
 		elif (linkNo == 3):
-			URL = self.getDictionaryURL3()
+			URL = self.get_dictionary_url_3()
 			encoding = self.getWordEncodingURL3()
 			autoOpen = self.getOpenAutomaticallyURL3()
 		if (always or autoOpen):
@@ -251,35 +252,35 @@ class Language():
 
 
 	def putPref(self, key, value):
-		if(FILE_IDENTIFIER not in self.langPrefs):
-			self.langPrefs[FILE_IDENTIFIER] = {}
-		self.langPrefs[FILE_IDENTIFIER][key] = str(value).strip()
+		if(FILE_IDENTIFIER not in self.lang_prefs):
+			self.lang_prefs[FILE_IDENTIFIER] = {}
+		self.lang_prefs[FILE_IDENTIFIER][key] = str(value).strip()
 
 
 	def saveFile(self):
 		import configparser
 		config = configparser.ConfigParser()
-		config[FILE_IDENTIFIER] = {KEYcharSubstitutions: self.getCharSubstitutions(),
-		                           KEYwordCharRegExp: self.getWordCharRegExp(),
-		                           KEYmakeCharacterWord: 1 if self.getMakeCharacterWord() else 0,
-		                           KEYremoveSpaces: 1 if self.getRemoveSpaces() else 0,
-		                           KEYrightToLeft: 1 if self.getRightToLeft() else 0,
-		                           KEYfontName: self.getFontName(),
-		                           KEYfontSize: self.getFontSize(),
-		                           KEYstatusFontName: self.getStatusFontName(),
-		                           KEYstatusFontSize: self.getStatusFontSize(),
-		                           KEYdictionaryURL1: self.getDictionaryURL1(),
-		                           KEYwordEncodingURL1: self.getWordEncodingURL1(),
-		                           KEYopenAutomaticallyURL1: self.getOpenAutomaticallyURL1(),
-		                           KEYdictionaryURL2: self.getDictionaryURL2(),
-		                           KEYwordEncodingURL2: self.getWordEncodingURL2(),
-		                           KEYopenAutomaticallyURL2: self.getOpenAutomaticallyURL2(),
-		                           KEYdictionaryURL3: self.getDictionaryURL3(),
-		                           KEYwordEncodingURL3: self.getWordEncodingURL3(),
-		                           KEYopenAutomaticallyURL3:  1 if self.getOpenAutomaticallyURL3() else 0,
-		                           KEYexportTemplate: self.getExportTemplate(),
-		                           KEYexportStatuses: self.getExportStatuses(),
-		                           KEYdoExport:  1 if self.getDoExport() else 0}
+		config[FILE_IDENTIFIER] = {KEY_char_substitutions: self.get_char_substitutions(),
+		                           KEY_word_char_regex: self.getWordCharRegExp(),
+		                           KEY_make_character_word: 1 if self.getMakeCharacterWord() else 0,
+		                           KEY_remove_spaces: 1 if self.getRemoveSpaces() else 0,
+		                           KEY_right_to_left: 1 if self.getRightToLeft() else 0,
+		                           KEY_font_name: self.getFontName(),
+		                           KEY_font_size: self.getFontSize(),
+		                           KEY_status_font_name: self.getStatusFontName(),
+		                           KEY_status_font_size: self.getStatusFontSize(),
+		                           KEY_dictionary_url_1: self.get_dictionary_url_1(),
+		                           KEY_word_encoding_url_1: self.getWordEncodingURL1(),
+		                           KEY_open_automatically_url_1: self.getOpenAutomaticallyURL1(),
+		                           KEY_dictionary_url_2: self.get_dictionary_url_2(),
+		                           KEY_word_encoding_url_2: self.getWordEncodingURL2(),
+		                           KEY_open_automatically_url_2: self.getOpenAutomaticallyURL2(),
+		                           KEY_dictionary_url_3: self.get_dictionary_url_3(),
+		                           KEY_word_encoding_url_3: self.getWordEncodingURL3(),
+		                           KEY_open_automatically_url_3:  1 if self.getOpenAutomaticallyURL3() else 0,
+		                           KEY_export_template: self.getExportTemplate(),
+		                           KEY_export_statuses: self.getExportStatuses(),
+		                           KEY_do_export:  1 if self.getDoExport() else 0}
 		fileName = self.langFile
 		with open(fileName, 'w', encoding = constants.ENCODING) as configfile:
 			config.write(configfile)

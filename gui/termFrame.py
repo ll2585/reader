@@ -1,10 +1,13 @@
 import gui.utilities as utilities
 import app.constants as constants
 import gui.preferences as preferences
-from app.terms import Term, RootWord
+from app.terms import Term, Lemma
 import gui.application
 from app.TermStatus import TermStatus as TermStatus
+import sip
+sip.setapi('QString', 2)
 from PyQt4 import QtGui, QtCore
+
 
 class TermFrame(QtGui.QMainWindow):
 	def __init__(self):
@@ -24,50 +27,64 @@ class TermFrame(QtGui.QMainWindow):
 		self.tfTerm = MultiLineTextField('', 200, 2, 35, self)
 		#bar1.addWidget(self.tfTerm.getTextAreaScrollPane())
 
-		formLayout.addRow(QtGui.QLabel('Term:'), self.tfTerm.getTextAreaScrollPane())
+		self.term_text = QtGui.QLabel()
+		self.copy_term_button = QtGui.QPushButton("Copy Term")
+		self.copy_term_button.clicked.connect(self.copy_term)
+		term_layout = QtGui.QHBoxLayout()
+		term_layout.addWidget(self.term_text)
+		term_layout.addWidget(self.copy_term_button)
+		formLayout.addRow(QtGui.QLabel('Term:'), term_layout)
+
+		#TODO: allow for deleting and saving the changes and also event triggering the button
+		lemma_layout = QtGui.QHBoxLayout()
+		self.new_lemma_button = QtGui.QPushButton("Add new")
+		self.new_lemma_button.clicked.connect(self.edit_lemma)
+		self.delete_lemma_button = QtGui.QPushButton("Remove lemma from term")
+		self.delete_lemma_button.clicked.connect(self.remove_lemma)
+		self.lemma_dropdown = QtGui.QComboBox(self)
+		self.lemma_dropdown.currentIndexChanged.connect(self.lemma_changed)
+		self.lemma_text_field = MultiLineTextField('', 200, 2, 35, self)
+		self.lemma_text_field.addTextChangedEvent(self.lemma_edited)
+		self.lemma_widget_stack = StackedWidget()
+
+		self.lemma_widget_stack.addWidget(self.lemma_text_field.getTextAreaScrollPane())
+		self.lemma_widget_stack.addWidget(self.lemma_dropdown)
+		lemma_layout.addWidget(self.lemma_widget_stack)
+		lemma_layout.addWidget(self.new_lemma_button)
+		lemma_layout.addWidget(self.delete_lemma_button)
+		formLayout.addRow(QtGui.QLabel('Lemma:'), lemma_layout)
+
 		self.tfRootTerm = MultiLineTextField('', 200, 2, 35, self)
 		formLayout.addRow(QtGui.QLabel('Root Term:'), self.tfRootTerm.getTextAreaScrollPane())
-		self.tfRootTerm.addTextChangedEvent(self.rootEditted)
-		self.tfDefinition = MultiLineTextField('', 200, 4, 35, self)
-		formLayout.addRow(QtGui.QLabel('Root Definition:'), self.tfDefinition.getTextAreaScrollPane())
+		self.tfRootTerm.addTextChangedEvent(self.lemma_edited)
+		self.definition_text_field = MultiLineTextField('', 200, 4, 35, self)
+		self.definition_dropdown = QtGui.QComboBox(self)
+		definition_row = QtGui.QHBoxLayout()
+		definition_row.addWidget(self.definition_text_field.getTextAreaScrollPane())
+		definition_row.addWidget(self.definition_dropdown)
+		formLayout.addRow(QtGui.QLabel('Lemma Definition:'), definition_row)
 		self.tfTranslation = MultiLineTextField('', 200, 4, 35, self)
 		formLayout.addRow(QtGui.QLabel('Translation:'), self.tfTranslation.getTextAreaScrollPane())
-		langName = gui.application.getLanguage().getLangName()
-		if langName == 'Korean':
+		lang_name = gui.application.getLanguage().getLangName()
+		if lang_name == 'Korean':
 			lookupLayout = QtGui.QHBoxLayout()
 
-			self.naverButton = QtGui.QPushButton("Lookup on Naver")
-			self.naverButton.clicked.connect(functools.partial(self.lookupButtonClicked, langName, False))
-			lookupLayout.addWidget(self.naverButton)
+			self.naver_button = QtGui.QPushButton("Lookup on Naver")
+			self.naver_button.clicked.connect(functools.partial(self.lookup_button_clicked, lang_name, False))
+			lookupLayout.addWidget(self.naver_button)
 
-			self.naverRootButton = QtGui.QPushButton("Lookup Root on Naver")
-			self.naverRootButton.clicked.connect(functools.partial(self.lookupButtonClicked, langName, True))
-			lookupLayout.addWidget(self.naverRootButton)
+			self.naver_lemma_button = QtGui.QPushButton("Lookup Lemma on Naver")
+			self.naver_lemma_button.clicked.connect(functools.partial(self.lookup_button_clicked, lang_name, True))
+			lookupLayout.addWidget(self.naver_lemma_button)
 
 			formLayout.addRow(QtGui.QLabel('Lookup:'), lookupLayout)
-		self.tfSentence = MultiLineTextField('', 400, 2, 35, self)
+		self.tfSentence = MultiLineTextField('', 400, 5, 35, self)
 		formLayout.addRow(QtGui.QLabel('Sentence:'), self.tfSentence.getTextAreaScrollPane())
+		self.notes_text_field = MultiLineTextField('', 400, 5, 35, self)
+		formLayout.addRow(QtGui.QLabel('Notes:'), self.notes_text_field.getTextAreaScrollPane())
 		bar1.addLayout(formLayout)
 		mainLayout.addLayout(bar1)
-		'''
-		bar2 = QtGui.QHBoxLayout()
-		bar2.addWidget(QtGui.QLabel('Root Term:'))
-		self.tfRootTerm = MultiLineTextField('', 200, 2, 35, self)
-		bar2.addWidget(self.tfRootTerm.getTextAreaScrollPane())
-		mainLayout.addLayout(bar2)
 
-		bar3 = QtGui.QHBoxLayout()
-		bar3.addWidget(QtGui.QLabel('Translation:'))
-		self.tfTranslation = MultiLineTextField('', 200, 2, 35, self)
-		bar3.addWidget(self.tfTranslation.getTextAreaScrollPane())
-		mainLayout.addLayout(bar3)
-
-		bar4 = QtGui.QHBoxLayout()
-		bar4.addWidget(QtGui.QLabel('Sentence:'))
-		self.tfSentence = MultiLineTextField('', 400, 2, 35, self)
-		bar4.addWidget(self.tfSentence.getTextAreaScrollPane())
-		mainLayout.addLayout(bar4)
-		'''
 		bar5 = QtGui.QHBoxLayout()
 		bar5.setSpacing (10)
 		bar5.addStretch()
@@ -80,9 +97,6 @@ class TermFrame(QtGui.QMainWindow):
 			#rbStatus[i].addActionListener(listener);
 			bgStatus.addButton(self.rbStatus[i])
 			bar5.addWidget(self.rbStatus[i])
-				#, "gapbottom 10px"
-				#	+ (i == 0 ? ", split"
-				#			: (i == (rbStatus.length - 1) ? ", wrap" : "")));
 		self.rbStatus[5].setText("Ign")
 		self.rbStatus[6].setText("WKn")
 
@@ -94,17 +108,17 @@ class TermFrame(QtGui.QMainWindow):
 		lang = gui.application.getLanguage()
 
 		self.butLookup1 = QtGui.QPushButton("Dict1")
-		self.butLookup1.setEnabled(lang.getDictionaryURL1().startswith(constants.URL_BEGIN))
+		self.butLookup1.setEnabled(lang.get_dictionary_url_1().startswith(constants.URL_BEGIN))
 		self.butLookup1.clicked.connect(functools.partial(self.lookupDict, 1))
 		bar6.addWidget(self.butLookup1)
 
 		self.butLookup2 = QtGui.QPushButton("Dict2")
-		self.butLookup2.setEnabled(lang.getDictionaryURL2().startswith(constants.URL_BEGIN))
+		self.butLookup2.setEnabled(lang.get_dictionary_url_2().startswith(constants.URL_BEGIN))
 		self.butLookup2.clicked.connect(functools.partial(self.lookupDict, 2))
 		bar6.addWidget(self.butLookup2)
 
 		self.butLookup3 = QtGui.QPushButton("Dict3")
-		self.butLookup3.setEnabled(lang.getDictionaryURL3().startswith(constants.URL_BEGIN))
+		self.butLookup3.setEnabled(lang.get_dictionary_url_3().startswith(constants.URL_BEGIN))
 		self.butLookup3.clicked.connect(functools.partial(self.lookupDict, 3))
 		bar6.addWidget(self.butLookup3)
 
@@ -119,75 +133,126 @@ class TermFrame(QtGui.QMainWindow):
 
 
 		self.setCentralWidget(self.mainPanel)
+		self.setFixedSize(self.mainPanel.sizeHint())
+
 
 		#d = QtGui.QDesktopWidget.screenGeometry()
 		self.inSetData = False
 		self.adjustSize()
-		self.rootChangedBool = False
-		self.originalRoot = ''
+		self.is_lemma_changed = False
+		self.original_lemma = ''
 		self.originalDef = ''
 		self.originalTrans = ''
 		self.originalStatus = None
+		self.selected_lemma = None
+		self.selected_lemma_id = -99
+		self.term = None
+		self.sentence = ''
+		self.term_id = -99
 
-	def lookupNaver(self, root):
-		from app.koreanHelper import get_root, get_root_korean
-		if not root:
-			word = utilities.replaceControlCharactersWithSpace(self.getTfTerm().getTextArea().toPlainText())
+	def copy_term(self):
+		clipboard = QtGui.QApplication.clipboard()
+		clipboard.setText(self.term_text.text())
+
+	def lemma_changed(self):
+		if self.selected_lemma_id > 0 and self.lemma_dropdown.currentText() != '':
+			terms = gui.application.getTerms()
+			self.selected_lemma = terms.real_lemma_dict[self.lemma_dropdown.currentText()][0]
+			self.selected_lemma_id = self.selected_lemma.id
+			self.set_lemma_fields()
+
+	def remove_lemma(self):
+		terms = gui.application.getTerms()
+		if len(self.term.possible_lemmas) > 1:
+			for index, lemma_link in enumerate(self.term.possible_lemmas):
+				if lemma_link['lemma_id'] == self.selected_lemma_id:
+					terms.add_removed_link(self.term.id, self.selected_lemma_id)
+					self.lemma_dropdown.removeItem(self.lemma_dropdown.currentIndex())
+					del self.term.possible_lemmas[index]
+					break
+		elif len(self.term.possible_lemmas) == 1:
+			terms.add_removed_link(self.term.id, self.selected_lemma_id)
+			self.lemma_dropdown.removeItem(self.lemma_dropdown.currentIndex())
+			del self.term.possible_lemmas[0]
+			self.prepare_for_new_lemma(self.sentence)
 		else:
-			word =  utilities.replaceControlCharactersWithSpace(self.getTfRootTerm().getTextArea().toPlainText())
-		result = get_root(word)
-		if(result):
-			self.tfRootTerm.getTextArea().setText(result[0][0])
+			self.prepare_for_new_lemma(self.sentence)
+
+	#TODO: finish refactoring this...or getting it to work
+	def lookup_naver(self, lemma):
+		from app.koreanHelper import get_lemma, get_lemma_korean
+		if not lemma:
+			word = utilities.replaceControlCharactersWithSpace(self.term_text.text())
+		else:
+			if self.selected_lemma_id == -1:
+				word = utilities.replaceControlCharactersWithSpace(self.lemma_text_field.getTextArea().toPlainText())
+			else:
+				word =  utilities.replaceControlCharactersWithSpace(self.selected_lemma.word)
+		result = get_lemma(word)
+
+		if result:
+			self.lemma_text_field.getTextArea().setText(result[0][0])
 			self.tfTranslation.getTextArea().setText(result[1])
 		else:
-			self.tfRootTerm.getTextArea().setText('Please Manually Enter')
-		kor_def = get_root_korean(word)
+			self.lemma_text_field.getTextArea().setText('Please Manually Enter')
+		kor_def = get_lemma_korean(word)
+		print(kor_def)
 		if(kor_def):
-			self.tfDefinition.getTextArea().setText(kor_def[1])
+			self.definition_text_field.getTextArea().setText(kor_def[1])
 			if not result:
-				self.tfRootTerm.getTextArea().setText(kor_def[0])
+				self.lemma_text_field.getTextArea().setText(kor_def[0])
+				eng_def_using_korean_lemma = get_lemma(kor_def[0])
+				if eng_def_using_korean_lemma:
+					self.tfTranslation.getTextArea().setText(eng_def_using_korean_lemma[1])
+			self.lemma_was_changed()
 		else:
-			self.tfDefinition.getTextArea().setText('Please Manually Enter')
-
-	def lookupButtonClicked(self, lang, root = False):
-		lookup = {'Korean': self.lookupNaver}
-		lookup[lang](root)
+			self.definition_text_field.getTextArea().setText('Please Manually Enter')
 
 
-	def rootEditted(self):
-		self.rootChangedBool = self.getTfRootTerm().getTextArea().toPlainText() != self.originalRoot
+	def lookup_button_clicked(self, lang, lemma = False):
+		lookup = {'Korean': self.lookup_naver}
+		lookup[lang](lemma)
 
-	def rootChanged(self):
-		if self.rootChangedBool:
+
+	def lemma_edited(self):
+		new_lemma_text = self.lemma_text_field.getTextArea().toPlainText()
+		if new_lemma_text != '':
+			self.is_lemma_changed = new_lemma_text != self.original_lemma
+
+	def lemma_was_changed(self):
+		if self.is_lemma_changed:
+			new_lemma_text = self.lemma_text_field.getTextArea().toPlainText()
 			terms = gui.application.getTerms()
-			editRoot = self.getTfRootTerm().getTextArea().toPlainText()
-			newRoot = editRoot
-			if newRoot == '':
-				self.tfDefinition.getTextArea().setText('')
+			new_lemma = new_lemma_text
+			if new_lemma_text == '':
+				self.definition_text_field.getTextArea().setText('')
 				self.tfTranslation.getTextArea().setText('')
-			elif newRoot in terms.rootDict:
-				newRootTerm = terms.rootDict[newRoot]
-				self.tfDefinition.getTextArea().setText(newRootTerm.definition)
-				self.tfTranslation.getTextArea().setText(newRootTerm.translation)
-				self.setRbStatus(newRootTerm.status)
-			self.rootChangedBool = False
+			elif self.lemma_exists(new_lemma_text):
+				try:
+					self.selected_lemma = self.get_lemma_from_string(new_lemma_text)
+				except TypeError:
+					print(":ERROR: {0}".format(new_lemma_text))
+				self.selected_lemma_id = self.selected_lemma.id
+				self.set_lemma_fields()
+		if self.lemma_text_field.getTextArea().toPlainText() == '' and self.selected_lemma.word == '':
+			self.prepare_for_new_lemma(self.sentence)
 
 	def startNew(self, term, sentence):
-		#utilities.setComponentOrientation(tfTerm.getTextArea());
 		#utilities.setComponentOrientation(tfSentence.getTextArea());
 		#utilities.setComponentOrientation(cbSimilar);
+		self.term = term
+		self.term_id = -1
+		self.sentence = sentence
 		self.tfSentence.getTextArea().setTextColor(QtCore.Qt.black)
+		self.prepare_for_new_lemma(sentence)
 		self.setWindowTitle("New Term")
 		self.originalKey = term.lower()
-		self.tfTerm.getTextArea().setText(term)
-		self.tfTranslation.getTextArea().setText("")
-		self.tfRootTerm.getTextArea().setText('')
-		self.tfDefinition.getTextArea().setText('')
-		self.originalRoot = ''
+		self.term_text.setText(term)
+		self.original_lemma = ''
 		self.originalDef = ''
 		self.originalTrans = ''
 		self.originalStatus = TermStatus.Unknown
-
+		self.notes_text_field.getTextArea().setText("")
 
 		if not preferences.getCurrText() == "<Vocabulary>":
 			self.tfSentence.getTextArea().setText(sentence)
@@ -197,34 +262,94 @@ class TermFrame(QtGui.QMainWindow):
 
 		self.adjustSize()
 		self.setVisible(True)
-		self.tfTranslation.getTextArea().setFocus()
+		self.lemma_text_field.getTextArea().setFocus()
+
+	def set_lemma_fields(self):
+		if self.selected_lemma:
+			self.tfRootTerm.getTextArea().setText(self.selected_lemma.word)
+			self.original_lemma = self.selected_lemma.word
+			self.definition_text_field.getTextArea().setText(self.selected_lemma.definition)
+			self.tfTranslation.getTextArea().setText(self.selected_lemma.translation)
+			self.setRbStatus(self.selected_lemma.status)
+			self.notes_text_field.getTextArea().setText("")
+			self.originalDef = self.selected_lemma.definition
+			self.originalTrans = self.selected_lemma.translation
+			self.originalStatus = self.selected_lemma.status
+			if not preferences.getCurrText() == "<Vocabulary>":
+				self.tfSentence.getTextArea().setText(self.sentence)
+				if type(self.term) == Term:
+					self.notes_text_field.getTextArea().setText(self.term.get_notes_of_lemma_id(self.selected_lemma_id))
+			else:
+				self.tfSentence.getTextArea().setText("")
+
+	def prepare_for_new_lemma(self, sentence):
+		self.lemma_widget_stack.setCurrentWidget(self.lemma_text_field.getTextAreaScrollPane())
+		# TODO: add in sentencecloze, prior sentence, following sentence, source
+		self.selected_lemma = Lemma(-1, '', '', '', '', '', sentence, '', '', 1)
+		self.selected_lemma_id = -1
+		self.lemma_text_field.getTextArea().setText('')
+		self.lemma_dropdown.clear()
+		self.tfTranslation.getTextArea().setText("")
+		self.tfRootTerm.getTextArea().setText('')
+		self.definition_text_field.getTextArea().setText('')
+		self.tfSentence.getTextArea().setText(sentence)
 
 	def startEdit(self, term, sentence):
-		#utilities.setComponentOrientation(tfTerm.getTextArea());
+		terms = gui.application.getTerms()
+		self.term = term
+		self.term_text.setText(term.get_term())
+		self.term_id = term.id
+		self.sentence = sentence
 		#utilities.setComponentOrientation(tfSentence.getTextArea());
 		#utilities.setComponentOrientation(cbSimilar);
 		self.tfSentence.getTextArea().setTextColor(QtCore.Qt.black)
 		self.setWindowTitle("Edit Term")
 		self.originalKey = term.getKey()
-		self.tfTerm.getTextArea().setText(term.getTerm())
-		self.tfRootTerm.getTextArea().setText(term.root.word)
-		self.originalRoot = term.root.word
-		self.tfDefinition.getTextArea().setText(term.root.definition)
-		self.tfTranslation.getTextArea().setText(term.getTranslation())
-
-		self.originalDef = term.root.definition
-		self.originalTrans = term.getTranslation()
-		self.originalStatus = term.getStatus()
-
-		if not preferences.getCurrText() == "<Vocabulary>":
-			self.tfSentence.getTextArea().setText(sentence)
+		self.notes_text_field.getTextArea().setText("")
+		if len(term.get_possible_lemmas())==0:
+			self.prepare_for_new_lemma(sentence)
+			self.lemma_text_field.getTextArea().setFocus()
 		else:
-			self.tfSentence.getTextArea().setText("")
-		self.setRbStatus(term.getStatus())
+			self.lemma_text_field.getTextArea().setText('')
+			self.lemma_dropdown.clear()
+			self.lemma_widget_stack.setCurrentIndex(1)
+			for t in term.get_possible_lemmas():
+				self.lemma_dropdown.addItem(terms.lemma_id_dict[t].word)
+			# TODO: find a way to change the default - right now defaults to the first result of the lemma
+			try:
+				self.selected_lemma = terms.real_lemma_dict[self.lemma_dropdown.currentText()][0]
+			except TypeError:
+				print(self.lemma_dropdown.currentText())
+			self.selected_lemma_id = self.selected_lemma.id
+			#TODO: get this to work (adding new definitions)
+			self.definition_dropdown.addItem("1")
+			self.definition_dropdown.addItem("Add New Definition")
+			self.set_lemma_fields()
+			self.tfTranslation.getTextArea().setFocus()
+		self.setRbStatus(self.term.get_status())
 
 		self.adjustSize()
 		self.setVisible(True)
-		self.tfTranslation.getTextArea().setFocus()
+
+
+
+	def edit_lemma(self):
+		#TODO: allow to go back? right now no going back
+		self.selected_lemma = self.selected_lemma.new_empty_lemma()
+		self.prepare_for_new_lemma(self.sentence)
+		self.selected_lemma_id = self.selected_lemma.id
+		self.lemma_changed()
+
+
+	def lemma_exists(self, string):
+		terms = gui.application.getTerms()
+		return string in terms.real_lemma_dict
+
+	def get_lemma_from_string(self, string):
+		terms = gui.application.getTerms()
+		#TODO: dont always return the first one
+		return terms.real_lemma_dict[string][0]
+
 
 	def setRbStatus(self, ts):
 		index = ts.ordinal() - 1
@@ -254,7 +379,7 @@ class TermFrame(QtGui.QMainWindow):
 		return self.tfSentence
 
 	def getTfDefinition(self):
-		return self.tfDefinition
+		return self.definition_text_field
 
 	def getOriginalKey(self):
 		return self.originalKey
@@ -266,88 +391,82 @@ class TermFrame(QtGui.QMainWindow):
 		return TermStatus.Unknown
 
 	def save(self):
-		term = utilities.replaceControlCharactersWithSpace(self.getTfTerm().getTextArea().toPlainText())
-		root = utilities.replaceControlCharactersWithSpace(self.getTfRootTerm().getTextArea().toPlainText())
-		definition = self.tfDefinition.getTextArea().toPlainText()
+		term_text = utilities.replaceControlCharactersWithSpace(self.term_text.text())
+		if self.is_lemma_changed:
+			lemma_text = utilities.replaceControlCharactersWithSpace(self.lemma_text_field.getTextArea().toPlainText())
+		else:
+			lemma_text = self.selected_lemma.word
+		definition = self.definition_text_field.getTextArea().toPlainText()
 		translation = utilities.replaceControlCharactersWithSpace(self.getTfTranslation().getTextArea().toPlainText())
 		sentence = utilities.replaceControlCharactersWithSpace(self.getTfSentence().getTextArea().toPlainText())
+		notes = utilities.replaceControlCharactersWithSpace(self.notes_text_field.getTextArea().toPlainText())
 		priorSentence = ''
 		sentenceCLOZE = ''
 		followingSentence = ''
 		source = ''
 		status = self.getRbStatus()
 
-		if term == (""):
-			utilities.showErrorMessage("Mandatory field.\nTerm must not be empty.")
-			self.getTfTerm().getTextArea().setFocus(True)
-			return
+		term_id = self.term_id
+		lemma_id = self.selected_lemma_id
+		language = gui.application.getLanguage().getLangName()
 
 		if status != TermStatus.Ignored and status != TermStatus.WellKnown:
 			if translation == "":
 				utilities.showErrorMessage("Mandatory field.\nTranslation must not be empty, unless status is 'Ignored' or 'Well Known'.");
 				self.getTfTranslation().getTextArea().setFocus(True)
 				return
-		key = term.lower()
-		changedTerm = self.getOriginalKey() != key
-		changedRoot = self.getTfRootTerm().getTextArea().toPlainText() != self.originalRoot and self.originalRoot != ''
-		print(self.getTfRootTerm().getTextArea().toPlainText())
+
+		changed_lemma = self.is_lemma_changed and self.original_lemma != ''
 		terms = gui.application.getTerms()
-		t = terms.getTermFromKey(key)
-		exists = (t != None)
-		if root not in terms.rootDict:
-			newID = len(terms.rootDict)+1
+		is_new_term = self.term_id == -1
+		#check for new lemma first
+		if self.selected_lemma_id == -1:
+			new_lemma_id = terms.get_next_lemma_id_and_increment()
 			#(self, id, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status, new = True, updated = False):
-			rootTerm = RootWord(newID, root, definition, translation, 'prior sentence TODO', 'sentenceCLOZETODO', sentence, 'followingsentenceTODO', 'sourceTODO', status.getStatusCode(), new=True, updated=False)
-			terms.rootDict[root] = rootTerm
+			lemma_id = new_lemma_id
+			lemma = Lemma(new_lemma_id, lemma_text, definition, translation, 'prior sentence TODO', 'sentenceCLOZETODO', sentence, 'followingsentenceTODO', 'sourceTODO', status.getStatusCode(), new=True, updated=False)
+			#TODO: move this shit to terms
+			terms.real_lemma_dict[lemma_text] = new_lemma_id
+			terms.lemma_id_dict[new_lemma_id] = lemma
+			terms.lemma_dict[lemma_text] = lemma
+			terms.setDirty(True)
 		else:
-			rootTerm = terms.rootDict[root]
-			if definition != rootTerm.definition or translation != rootTerm.translation or status != rootTerm.status:
+			lemma = terms.lemma_id_dict[self.selected_lemma_id]
+			if definition != lemma.definition or translation != lemma.translation or status != lemma.status:
 				#got rid of this because duh...
 				#if not utilities.showYesNoQuestion(
 				#	"You have changed the Root Term definition or translation or status!\n\nAre you sure?", True):
 				#	return
-				rootTerm.definition = definition
-				rootTerm.translation = translation
-				rootTerm.status = status
-				rootTerm.updated = True
-		if not exists:
-			if changedTerm:
-				if not utilities.showYesNoQuestion(
-						"You have changed the Term from\n[%s] to the NEW Term [%s].\n\nAre you sure?" %(self.getOriginalKey(), key), True):
-					return
-			if changedRoot:
-				if not utilities.showYesNoQuestion(
-						"You have changed the Root from\n[%s] to the NEW Root [%s].\n\nAre you sure?" %(self.originalRoot, self.getTfRootTerm().getTextArea().toPlainText()), True):
-					return
-			#self, word, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status
-			#terms.addTerm(Term(term, RootWord(root, definition, translation, priorSentence, sentenceCLOZE, sentence, followingSentence, source, status.getStatusCode())))
-			newTerm = Term(term, terms.nextID(), rootTerm, rootTerm.id, True, False)
-			terms.addTerm(newTerm)
-		else:
-			if (changedTerm):
-				if not utilities.showYesNoQuestion(
-								"You have changed the Term from\n[%s] to the EXISTENT Term [%s].\n\nAre you sure to OVERWRITE?" %(self.getOriginalKey(), key),
-								False):
-					return
-			if changedRoot:
-				print(self.originalRoot)
-				if not utilities.showYesNoQuestion(
-						"You have changed the Root from\n[%s] to the EXISTENT Root [%s].\n\nAre you sure?" %(self.originalRoot, self.getTfRootTerm().getTextArea().toPlainText()), True):
-					return
-				if self.originalRoot != '':
-					if terms.getRootCount(self.originalRoot) == 1:
-						terms.deleteRoot(self.originalRoot)
-					if terms.getRootCount(self.originalRoot) >= 1:
-						terms.subtractCountFromRoot(self.originalRoot)
-				terms.addCountToRoot(root)
-				t.updated = True
-			t.setTerm(term)
-			t.root =  terms.rootDict[root]
-			t.setTranslation(translation)
-			t.setSentence(sentence)
-			t.setStatus(status)
-			t.updated = True
+				#TODO: maybe make setters
+				lemma.definition = definition
+				lemma.translation = translation
+				lemma.status = status
+				lemma.updated = True
+				terms.setDirty(True)
+		if is_new_term:
+			next_term_id = terms.get_next_term_id_and_increment()
+			term_id = next_term_id
+			term = Term(term_text, next_term_id, lemma_text, lemma_id, True, False)
+			terms.add_term(term)
+			#TODO: move this shit to terms
+			terms.real_term_dict[lemma] = term
+			terms.term_id_dict[next_term_id] = term
 			terms.setDirty(True)
+		else:
+			term = terms.term_id_dict[term_id]
+		if term.didnt_originally_have_lemma(lemma_id):
+			print("adding lemma {0} to {1}".format(lemma_id, term_id))
+			term.add_new_lemma(lemma_id, language, notes)
+			term.updated = True
+			terms.setDirty(True)
+			terms.joined_info.append({'lemma_id': lemma_id, 'term_id': term_id, 'language': language, 'notes': notes})
+		else:
+			original_notes = term.get_notes_of_lemma_id(lemma_id)
+			terms.setDirty(True)
+			if notes != original_notes:
+				term.set_notes_of_lemma_id(notes, lemma_id)
+				terms.add_edited_notes(term_id, lemma_id, notes)
+		#TODO: save notes if notes changed
 		self.setVisible(False)
 		gui.application.getText().matchWithTerms()
 		gui.application.getTextFrame().getTextPanel().update()
@@ -398,4 +517,15 @@ class customEdit(QtGui.QTextEdit):
 	def focusOutEvent(self, e):
 		QtGui.QTextEdit.focusOutEvent(self,e)
 		if(self.event):
-			self.parent.rootChanged()
+			self.parent.lemma_was_changed()
+
+	def focus_next_window(self, event):
+		event.widget.tk_focusNext().focus()
+		return ("break")
+
+class StackedWidget(QtGui.QStackedWidget):
+	def __init__(self):
+		QtGui.QStackedWidget.__init__(self)
+
+	def sizeHint(self):
+		return self.currentWidget().size()

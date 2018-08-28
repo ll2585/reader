@@ -23,7 +23,7 @@ class FlashCardController():
 		return self.deck.size()
 
 	def curCardStatus(self):
-		return self.getCurCard().getStatus()
+		return self.getCurCard().get_status()
 
 	def setCardStatus(self, status):
 		self.getCurCard().setStatus(status)

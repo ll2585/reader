@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import urllib
 
-def get_root(word):
+def get_lemma(word):
 	if word == None: return None
-	print(word)
+	print("looking up {0} on english dict".format(word))
 	u2 = urllib.parse.quote(word)
 	url = 'http://endic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=%s' %(u2)
 	print(url)
@@ -49,9 +49,9 @@ def get_root(word):
 	definition = div.find_next(class_='fnt_k05').get_text()
 	return (term, definition)
 
-def get_root_korean(word):
+def get_lemma_korean(word):
 	from bs4 import NavigableString
-	print(word)
+	print("looking up {0} on korean dict".format(word))
 	u2 = urllib.parse.quote(word)
 	url = 'http://krdic.naver.com/search.nhn?sLn=en&isOnlyViewEE=N&query=%s' %(u2)
 	print(url)

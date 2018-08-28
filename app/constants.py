@@ -10,7 +10,7 @@ LONG_NAME = "Foreign Language Text Reader"
 WEBSITE = "http://fltr.googlecode.com"
 COPYRIGHT = "Copyright © 2012 {0} Developers".format(SHORT_NAME)
 
-ICONPATH = os.path.normpath(os.path.join(here, '../img/icon128.png'))
+ICON_PATH = os.path.normpath(os.path.join(here, '../img/icon128.png'))
 LOCK_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrlock')
 PREF_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrprefsPYTHON')
 

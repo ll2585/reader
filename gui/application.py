@@ -7,6 +7,8 @@ import app.constants as constants
 from app.text import Text
 from gui.textFrame import TextFrame
 import threading, gui.utilities as utilities
+import sip
+sip.setapi('QString', 2)
 from PyQt4 import QtGui, QtCore
 import gui.preferences as preferences
 import sys
@@ -255,8 +257,7 @@ class StartFrame(QtGui.QMainWindow):
 			termFile = os.path.join(getBaseDir(), '%s%s' %(currLang,constants.WORDS_FILE_SUFFIX))
 			terms = Terms()
 			setTerms(terms)
-			dbPath = os.path.join(preferences.getDBPath(), constants.DB)
-
+			dbPath = os.path.join(getBaseDir(), constants.DB)
 			#if not terms.isLoadTermsFromFileOK(termFile):
 			if not terms.isLoadTermsFromDBOK(termFile, dbPath):
 				utilities.showErrorMessage("Loading Words File\n"
@@ -689,27 +690,27 @@ class LangSettingsTableModel(QtCore.QAbstractTableModel):
 		return None
 
 	def refreshMyList(self):
-		self.mylist = [[language.KEYcharSubstitutions, self.lang.getCharSubstitutions()],
-		               [language.KEYwordCharRegExp, self.lang.getWordCharRegExp()],
-		               [language.KEYmakeCharacterWord, (1 if self.lang.getMakeCharacterWord() else 0)],
-		               [language.KEYremoveSpaces, (1 if self.lang.getRemoveSpaces() else 0)],
-		               [language.KEYrightToLeft, (1 if self.lang.getRightToLeft() else 0)],
-		               [language.KEYfontName, self.lang.getFontName()],
-		               [language.KEYfontSize, str(self.lang.getFontSize())],
-		               [language.KEYstatusFontName, self.lang.getStatusFontName()],
-		               [language.KEYstatusFontSize, str(self.lang.getStatusFontSize())],
-		               [language.KEYdictionaryURL1, self.lang.getDictionaryURL1()],
-		               [language.KEYwordEncodingURL1, self.lang.getWordEncodingURL1()],
-		               [language.KEYopenAutomaticallyURL1, (1 if self.lang.getOpenAutomaticallyURL1() else 0)],
-		               [language.KEYdictionaryURL2, self.lang.getDictionaryURL2()],
-		               [language.KEYwordEncodingURL2, self.lang.getWordEncodingURL2()],
-		               [language.KEYopenAutomaticallyURL2, (1 if self.lang.getOpenAutomaticallyURL2() else 0)],
-		               [language.KEYdictionaryURL3, self.lang.getDictionaryURL3()],
-		               [language.KEYwordEncodingURL3, self.lang.getWordEncodingURL3()],
-		               [language.KEYopenAutomaticallyURL3, (1 if self.lang.getOpenAutomaticallyURL3() else 0)],
-		               [language.KEYexportTemplate, self.lang.getExportTemplate()],
-		               [language.KEYexportStatuses, self.lang.getExportStatuses()],
-		               [language.KEYdoExport, (1 if self.lang.getDoExport() else 0)]]
+		self.mylist = [[language.KEY_char_substitutions, self.lang.get_char_substitutions()],
+		               [language.KEY_word_char_regex, self.lang.getWordCharRegExp()],
+		               [language.KEY_make_character_word, (1 if self.lang.getMakeCharacterWord() else 0)],
+		               [language.KEY_remove_spaces, (1 if self.lang.getRemoveSpaces() else 0)],
+		               [language.KEY_right_to_left, (1 if self.lang.getRightToLeft() else 0)],
+		               [language.KEY_font_name, self.lang.getFontName()],
+		               [language.KEY_font_size, str(self.lang.getFontSize())],
+		               [language.KEY_status_font_name, self.lang.getStatusFontName()],
+		               [language.KEY_status_font_size, str(self.lang.getStatusFontSize())],
+		               [language.KEY_dictionary_url_1, self.lang.get_dictionary_url_1()],
+		               [language.KEY_word_encoding_url_1, self.lang.getWordEncodingURL1()],
+		               [language.KEY_open_automatically_url_1, (1 if self.lang.getOpenAutomaticallyURL1() else 0)],
+		               [language.KEY_dictionary_url_2, self.lang.get_dictionary_url_2()],
+		               [language.KEY_word_encoding_url_2, self.lang.getWordEncodingURL2()],
+		               [language.KEY_open_automatically_url_2, (1 if self.lang.getOpenAutomaticallyURL2() else 0)],
+		               [language.KEY_dictionary_url_3, self.lang.get_dictionary_url_3()],
+		               [language.KEY_word_encoding_url_3, self.lang.getWordEncodingURL3()],
+		               [language.KEY_open_automatically_url_3, (1 if self.lang.getOpenAutomaticallyURL3() else 0)],
+		               [language.KEY_export_template, self.lang.getExportTemplate()],
+		               [language.KEY_export_statuses, self.lang.getExportStatuses()],
+		               [language.KEY_do_export, (1 if self.lang.getDoExport() else 0)]]
 
 
 	def data(self, index, role):
@@ -943,24 +944,24 @@ class NewLanguageDialog(QtGui.QDialog):
 					if l2 >= 0:
 						ld2 = getLangDefs().getArray()[l2]
 						if ld2.isBiggerFont():
-							lang.putPref(language.KEYfontSize,str(((lang.getFontSize() * 3) / 2)))
+							lang.putPref(language.KEY_font_size, str(((lang.getFontSize() * 3) / 2)))
 						if ld2.getWordCharRegExp().strip() != "":
-							lang.putPref(language.KEYwordCharRegExp, ld2.getWordCharRegExp().strip())
-						lang.putPref(language.KEYmakeCharacterWord, 1 if ld2.isMakeCharacterWord() else 0)
-						lang.putPref(language.KEYremoveSpaces,  1 if ld2.isRemoveSpaces() else 0)
-						lang.putPref(language.KEYrightToLeft,  1 if ld2.isRightToLeft() else 0)
+							lang.putPref(language.KEY_word_char_regex, ld2.getWordCharRegExp().strip())
+						lang.putPref(language.KEY_make_character_word, 1 if ld2.isMakeCharacterWord() else 0)
+						lang.putPref(language.KEY_remove_spaces, 1 if ld2.isRemoveSpaces() else 0)
+						lang.putPref(language.KEY_right_to_left, 1 if ld2.isRightToLeft() else 0)
 						l2code = ld2.getIsoCode().strip()
 						if len(l2code) > 2:
 							l2code = l2code[:2]
 						if l1code != "" and l2code != "":
-							lang.putPref(language.KEYdictionaryURL1,"http://translate.google.com/?ie=UTF-8&sl=%s&t;=%s&text=###" %(l2code, l1code))
-							lang.putPref(language.KEYdictionaryURL2,"http://glosbe.com/%s/%s/###" %(l2code, l1code2))
+							lang.putPref(language.KEY_dictionary_url_1, "http://translate.google.com/?ie=UTF-8&sl=%s&t;=%s&text=###" % (l2code, l1code))
+							lang.putPref(language.KEY_dictionary_url_2, "http://glosbe.com/%s/%s/###" % (l2code, l1code2))
 							if ld2.isTtsAvailable():
-								lang.putPref(language.KEYdictionaryURL3,"http://translate.google.com/translate_tts?ie=UTF-8&tl=%s&q=###" %l2code)
+								lang.putPref(language.KEY_dictionary_url_3, "http://translate.google.com/translate_tts?ie=UTF-8&tl=%s&q=###" % l2code)
 						lang.saveFile()
 					else:
 						if l1code != "":
-							lang.putPref(language.KEYdictionaryURL1,"http://translate.google.com/?ie=UTF-8&sl=auto&tl=%s&text=###" %l1code)
+							lang.putPref(language.KEY_dictionary_url_1, "http://translate.google.com/?ie=UTF-8&sl=auto&tl=%s&text=###" % l1code)
 							lang.saveFile()
 					setLanguage(lang)
 					ok2 = os.path.exists(fLangSettingsFile)

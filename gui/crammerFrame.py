@@ -4,6 +4,8 @@ import gui.preferences as preferences
 import gui.application
 from app.TermStatus import TermStatus as TermStatus
 import app.TermStatus
+import sip
+sip.setapi('QString', 2)
 from PyQt4 import QtGui, QtCore
 from gui.termFrame import TermFrame
 import app.text as text

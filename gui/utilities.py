@@ -2,8 +2,9 @@ import sys, os
 here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.normpath(os.path.join(here, '../app')))
 import app.constants as constants
+import sip
+sip.setapi('QString', 2)
 from PyQt4 import QtGui, QtCore
-
 
 def checkSingleProgramInstance():
 	import os.path
@@ -24,7 +25,7 @@ def checkSingleProgramInstance():
 def showYesNoQuestion(message, default):
 	msgBox = QtGui.QMessageBox()
 	msgBox.setWindowTitle('Question')
-	icon = QtGui.QPixmap(constants.ICONPATH)
+	icon = QtGui.QPixmap(constants.ICON_PATH)
 	msgBox.setText(message)
 	msgBox.setIconPixmap(icon)
 	msgBox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
@@ -73,7 +74,7 @@ def getTextFileList(dir):
 def showAboutDialog():
 	msgBox = QtGui.QMessageBox()
 	msgBox.setWindowTitle('About %s' %constants.SHORT_NAME)
-	icon = QtGui.QPixmap(constants.ICONPATH)
+	icon = QtGui.QPixmap(constants.ICON_PATH)
 	message = '%s - %s - Version %s\n' \
 	          '%s\n' \
 	          'Website: %s\n\n' \
@@ -127,7 +128,7 @@ def openDirectoryInFileExplorer(dir):
 def showInfoMessage(msg):
 	msgBox = QtGui.QMessageBox()
 	msgBox.setText(msg)
-	icon = QtGui.QPixmap(constants.ICONPATH)
+	icon = QtGui.QPixmap(constants.ICON_PATH)
 	msgBox.setIconPixmap(icon)
 	msgBox.setWindowTitle("Information")
 	msgBox.setStandardButtons(QtGui.QMessageBox.Ok)
