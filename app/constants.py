@@ -11,8 +11,8 @@ WEBSITE = "http://fltr.googlecode.com"
 COPYRIGHT = "Copyright © 2012 {0} Developers".format(SHORT_NAME)
 
 ICON_PATH = os.path.normpath(os.path.join(here, '../img/icon128.png'))
-LOCK_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrlock')
-PREF_FILE_PATH = os.path.join(os.path.expanduser('~'),'.fltrprefsPYTHON')
+LOCK_FILE_PATH = os.path.join(os.path.expanduser('~'), '.fltrlock')
+PREF_FILE_PATH = os.path.join(os.path.expanduser('~'), '.fltrprefsPYTHON')
 
 TEXT_DIR_SUFFIX = "_Texts"
 TEXT_DIR_SUFFIX_LENGTH = len(TEXT_DIR_SUFFIX)
